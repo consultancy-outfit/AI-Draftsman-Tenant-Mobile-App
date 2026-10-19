@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: appName,
   slug: 'ai-draftsman-tenant-mobile',
-  version: '1.1.0',
+  version: '1.2.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic', // driven by our own ThemeProvider, not the OS switch alone
@@ -63,7 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      */
     supportsTablet: false,
     bundleIdentifier: `ai.aidraftsman.tenant${bundleSuffix}`,
-    buildNumber: '6',
+    buildNumber: '7',
     infoPlist: {
       NSFaceIDUsageDescription:
         'Use Face ID to unlock AI Draftsman B2B quickly and securely.',
@@ -86,7 +86,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     /* Play reads the manifest, not our intentions: an explicit versionCode here
        (appVersionSource is "local") means a bump is a reviewed source change
        rather than something EAS infers. */
-    versionCode: 6,
+    versionCode: 7,
     permissions: ['USE_BIOMETRIC', 'USE_FINGERPRINT'],
     /*
      * Permissions expo-image-picker's plugin adds by default for capabilities we
