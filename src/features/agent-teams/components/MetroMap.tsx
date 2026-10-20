@@ -18,6 +18,10 @@ interface MetroMapProps {
   onPressLine: (lineId: string) => void;
   /** Canvas height on screen; the drawing pans and zooms inside it. */
   height: number;
+  /** 'whole' (default) fits the entire drawing in the box. 'height' fills
+   * the box's height at a readable size and lets the user pan sideways —
+   * used full screen, where fitting the width left most of the screen empty. */
+  fitTo?: 'whole' | 'height';
 }
 
 const MIN_SCALE = 0.35;
@@ -33,12 +37,17 @@ const clamp = (v: number, lo: number, hi: number) => {
  * Opens fitted to the canvas height, so the whole shape is visible at once;
  * zoom in to read the stop names.
  */
-export function MetroMap({ model, focusLineId, onPressStation, onPressLine, height }: MetroMapProps) {
+export function MetroMap({ model, focusLineId, onPressStation, onPressLine, height, fitTo = 'whole' }: MetroMapProps) {
   const { theme } = useAppTheme();
   const layout: MetroLayout = useMemo(() => layoutMetro(model), [model]);
   const [boxW, setBoxW] = useState(0);
 
-  const fit = boxW > 0 ? clamp(Math.min(height / layout.height, boxW / layout.width), MIN_SCALE, 1) : 0.6;
+  const fit =
+    boxW > 0
+      ? fitTo === 'height'
+        ? clamp(height / layout.height, MIN_SCALE, 1.4)
+        : clamp(Math.min(height / layout.height, boxW / layout.width), MIN_SCALE, 1)
+      : 0.6;
 
   const scale = useSharedValue(fit);
   const savedScale = useSharedValue(fit);
@@ -249,5 +258,5 @@ const styles = StyleSheet.create({
   controls: { position: 'absolute', right: 10, bottom: 10, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   ctrl: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   sep: { height: StyleSheet.hairlineWidth },
-  hint: { position: 'absolute', left: 10, top: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  hint: { position: 'absolute', left: 10, bottom: 10, paddingHorizontal: 10, paddingVertical: 4 },
 });

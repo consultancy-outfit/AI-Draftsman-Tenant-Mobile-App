@@ -1,4 +1,5 @@
 import CookieManager from '@preeternal/react-native-cookie-manager';
+import { Platform } from 'react-native';
 
 import { env } from '@/config/env';
 
@@ -65,10 +66,15 @@ const SESSION_COOKIE_NAME = 'b2b_session';
  * an OAuth connector) ever writes the cookie into that store instead.
  */
 async function getCookieValue(name: string): Promise<string | undefined> {
-  const webkitCookies = await serialise(() => CookieManager.get(env.apiOrigin, true));
-  if (webkitCookies[name]?.value) return webkitCookies[name].value;
+  /* Foundation FIRST. It is the jar URLSession writes every Set-Cookie
+   * into, so it always holds the current session. On a real iPhone the
+   * WebKit jar can hold an OLDER b2b_session (it is synced from the shared
+   * store at times the simulator never does), and reading that first sent
+   * a revoked token to the socket. WebKit is only a fallback now. */
   const foundationCookies = await serialise(() => CookieManager.get(env.apiOrigin, false));
-  return foundationCookies[name]?.value;
+  if (foundationCookies[name]?.value) return foundationCookies[name].value;
+  const webkitCookies = await serialise(() => CookieManager.get(env.apiOrigin, true));
+  return webkitCookies[name]?.value;
 }
 
 export async function getSessionCookie(): Promise<string | undefined> {
@@ -103,6 +109,13 @@ export async function getOtpTicketCookie(): Promise<string | undefined> {
  * itself, so it has no fallback path to fall back to.
  */
 export async function buildCookieHeader(): Promise<string | undefined> {
+  /* iOS: never attach an explicit Cookie header. fetch/XHR (URLSession)
+   * already attach the Foundation store's cookies implicitly, and an
+   * explicit header built from the WebKit jar overrode them with a STALE
+   * b2b_session on real devices — every request then 401'd ("Unauthorized"
+   * on the transcript, empty modules), while the simulator, whose WebKit
+   * jar stays empty, worked. Android keeps the old path (one shared jar). */
+  if (Platform.OS === 'ios') return undefined;
   const header = await serialise(() => CookieManager.getCookieHeader(env.apiOrigin, true));
   return header.length > 0 ? header : undefined;
 }

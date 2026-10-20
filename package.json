@@ -1,6 +1,6 @@
 {
   "name": "ai-draftsman-tenant-mobile",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/instrument-sans": "^0.4.2",

@@ -38,6 +38,7 @@ export function TeamTubeMap({ header, onOpenTeam }: TeamTubeMapProps) {
   /* The followed line: highlighted on the map, and the only card below. */
   const [focusLineId, setFocusLineId] = useState<string | null>(null);
   const [fullScreen, setFullScreen] = useState(false);
+  const [fsMapH, setFsMapH] = useState(0);
   const { height: winH } = useWindowDimensions();
 
   const { data, isLoading, isFetching, isError, refetch } = useGetAgentTeamMapQuery(undefined, { refetchOnMountOrArgChange: true });
@@ -233,21 +234,22 @@ export function TeamTubeMap({ header, onOpenTeam }: TeamTubeMapProps) {
                 <Icon name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            <View style={{ flex: 1, paddingHorizontal: 8 }}>
+            <View style={{ flex: 1, paddingHorizontal: 8 }} onLayout={(e) => setFsMapH(Math.floor(e.nativeEvent.layout.height))}>
               <MetroMap
                 model={model}
                 focusLineId={focusLineId}
-                height={Math.max(300, winH - insets.top - insets.bottom - 120)}
+                fitTo="height"
+                height={fsMapH > 0 ? fsMapH : Math.max(300, winH - insets.top - insets.bottom - 140)}
                 onPressStation={(station) => setSelection({ kind: 'station', station })}
                 onPressLine={toggleFocus}
               />
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fsLegend}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fsLegendBar} contentContainerStyle={styles.fsLegend}>
               {model.lines.map((l) => {
                 const on = focusLineId === l.id;
                 const colour = colourOf(l.id);
                 return (
-                  <TouchableOpacity key={l.id} onPress={() => toggleFocus(l.id)} style={[styles.legendChip, { borderColor: on ? colour : theme.colors.border, backgroundColor: on ? colour + '1A' : theme.colors.surface, borderRadius: theme.radii.full }]}>
+                  <TouchableOpacity key={l.id} onPress={() => toggleFocus(l.id)} style={[styles.legendChip, styles.fsChip, { borderColor: on ? colour : theme.colors.border, backgroundColor: on ? colour + '1A' : theme.colors.surface, borderRadius: theme.radii.full }]}>
                     <View style={[styles.legendSwatch, { backgroundColor: colour }]} />
                     <Text style={{ color: theme.colors.text, fontSize: 12, fontFamily: on ? theme.fontFamilies.body.semibold : theme.fontFamilies.body.medium }}>{l.name}</Text>
                   </TouchableOpacity>
@@ -309,7 +311,11 @@ const styles = StyleSheet.create({
   keyHub: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   journeysHead: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   fsHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  fsLegend: { gap: 8, paddingHorizontal: 12, paddingVertical: 12 },
+  /* flexGrow 0: a horizontal ScrollView otherwise takes a share of the
+   * column's height and stretches every chip to it (the giant pills). */
+  fsLegendBar: { flexGrow: 0, flexShrink: 0 },
+  fsLegend: { gap: 8, paddingHorizontal: 12, paddingVertical: 12, alignItems: 'center' },
+  fsChip: { alignSelf: 'center' },
   card: { borderWidth: StyleSheet.hairlineWidth, padding: 14 },
   lineHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
   lineSwatch: { width: 6, height: 32, borderRadius: 3 },
