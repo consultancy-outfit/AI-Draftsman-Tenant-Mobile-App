@@ -78,6 +78,10 @@ export type ChatConversationStackParamList = {
    * A pushed screen here rather than a third column. */
   ChatThreadDetails: { conversationId: string };
   ChatThreadSearch: undefined;
+  /** Dispatch: scan the desktop's QR to pair this phone. */
+  PairComputer: undefined;
+  /** A text file the computer published to this phone. */
+  DeviceArtifact: { artifactId: string; computerKeyId: string };
 };
 
 export type CustomersStackParamList = {

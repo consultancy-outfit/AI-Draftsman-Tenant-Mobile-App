@@ -117,6 +117,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
+    ['expo-camera', { cameraPermission: 'Used to scan the pairing code shown on your computer.', recordAudioAndroid: false }],
     /*
      * Android release optimisation — Play Console flagged "DEX code
      * optimization is below our threshold" (obfuscation 2%, fix by Feb 2027).

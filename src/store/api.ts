@@ -79,6 +79,11 @@ export const api = createApi({
     'WorkspaceMember',
     /* The respondent's own assignments, keyed by assignment id + `LIST`. */
     'MySurvey',
+    /* Dispatch: paired computers/phones, tasks, approvals, artifacts. */
+    'DeviceList',
+    'DeviceTask',
+    'DeviceApproval',
+    'DeviceArtifact',
   ],
   endpoints: () => ({}),
 });
