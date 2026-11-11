@@ -256,7 +256,6 @@ export type AppTabParamList = {
   DashboardTab: undefined;
   CompanyAgentsTab: undefined;
   ChatTab: undefined;
-  DispatchTab: undefined;
   MarketplaceTab: undefined;
   SettingsTab: undefined;
 };
@@ -281,6 +280,8 @@ export type AppDrawerParamList = {
   UsageSpend: undefined;
   Surveys: NavigatorScreenParams<SurveysStackParamList> | undefined;
   MySurveys: NavigatorScreenParams<MySurveysStackParamList> | undefined;
+  /** Send work to the paired computer (sidebar, RUN). */
+  Dispatch: NavigatorScreenParams<DispatchStackParamList> | undefined;
   /**
    * `from` is the drawer route that opened the bell, so Back returns to that
    * screen rather than wherever the drawer's own history happens to point.

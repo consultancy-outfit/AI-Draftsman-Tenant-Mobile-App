@@ -12,6 +12,7 @@ import { ApiKeysStack } from './stacks/ApiKeysStack';
 import { BrandingStack } from './stacks/BrandingStack';
 import { ChatConversationStack } from './stacks/ChatConversationStack';
 import { CustomerAgentsStack } from './stacks/CustomerAgentsStack';
+import { DispatchStack } from './stacks/DispatchStack';
 import { CustomersStack } from './stacks/CustomersStack';
 import { KnowledgeBasesStack } from './stacks/KnowledgeBasesStack';
 import { LeadCriteriaStack } from './stacks/LeadCriteriaStack';
@@ -47,6 +48,7 @@ export function AppDrawer() {
       <Drawer.Screen name="KnowledgeBases" component={KnowledgeBasesStack} />
       <Drawer.Screen name="Playground" component={PlaygroundStack} />
       <Drawer.Screen name="AgentTeams" component={AgentTeamsStack} />
+      <Drawer.Screen name="Dispatch" component={DispatchStack} />
       <Drawer.Screen name="Customers" component={CustomersStack} />
       <Drawer.Screen name="Leads" component={LeadsStack} />
       <Drawer.Screen name="LeadCriteria" component={LeadCriteriaStack} />

@@ -9,7 +9,6 @@ import { useAppTheme } from '@/theme/ThemeContext';
 
 import { ChatStack } from './stacks/ChatStack';
 import { CompanyAgentsStack } from './stacks/CompanyAgentsStack';
-import { DispatchStack } from './stacks/DispatchStack';
 import { DashboardStack } from './stacks/DashboardStack';
 import { MarketplaceStack } from './stacks/MarketplaceStack';
 import { SettingsStack } from './stacks/SettingsStack';
@@ -32,7 +31,6 @@ export function AppTabs() {
   const canSeeDashboard = usePermission(DASHBOARD_PERMISSIONS.VIEW);
   const canSeeAgents = usePermission(AGENT_PERMISSIONS.VIEW);
   const canSeeChat = usePermission(CHAT_PERMISSIONS.VIEW);
-  const canSendChat = usePermission(CHAT_PERMISSIONS.SEND);
   const canSeeMarketplace = usePermission(CONNECTOR_PERMISSIONS.VIEW);
 
   useEffect(() => {
@@ -89,13 +87,6 @@ export function AppTabs() {
           name="ChatTab"
           component={ChatStack}
           options={{ title: 'Chat', tabBarIcon: ({ color, size }) => <Icon name="chat" size={size} color={color} /> }}
-        />
-      )}
-      {canSendChat && (
-        <Tab.Screen
-          name="DispatchTab"
-          component={DispatchStack}
-          options={{ title: 'Dispatch', tabBarIcon: ({ color, size }) => <Icon name="computer" size={size} color={color} /> }}
         />
       )}
       {canSeeMarketplace && (

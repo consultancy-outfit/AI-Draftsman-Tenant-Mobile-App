@@ -40,6 +40,7 @@ export const NAV_ICON_MAP = {
   agentTeams: 'account-tree',
   surveys: 'poll',
   mySurveys: 'assignment',
+  dispatch: 'computer',
   customers: 'business',
   leads: 'trending-up',
   leadCriteria: 'rule',

@@ -62,7 +62,7 @@ export function parsePairingToken(data: string): string | null {
 }
 
 /** The 403 for a phone that lacks the any_folder permission (the phone IS still paired). */
-export const isFolderNotAllowed = (messages: string[]) => messages.some((m) => /may not name a folder/i.test(m));
+export const isFolderNotAllowed = (messages: string[]) => messages.some((m) => /may not name a folder|not allowed to work in a chosen folder|work in any folder/i.test(m));
 
 export const SCOPE_LABEL: Record<PhoneScope, string> = {
   read: 'Read files',
@@ -70,11 +70,11 @@ export const SCOPE_LABEL: Record<PhoneScope, string> = {
   delete: 'Delete files',
   shell: 'Run commands',
   connectors: 'Use connectors',
-  any_folder: 'Work in a folder I name',
+  any_folder: 'Work in any folder',
 };
 
 export const FOLDER_NOT_ALLOWED_COPY =
-  'This phone may not name a folder. On the computer, allow "Work in a folder I name" for this phone.';
+  'This phone is not allowed to work in a chosen folder. On the computer, turn on “Work in any folder” for this phone.';
 
 /** Client-side mirror of the server's folder_path rules, so the common slips are caught before sending. */
 export function folderPathProblem(path: string): string | null {

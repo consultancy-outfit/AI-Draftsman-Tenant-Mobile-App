@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
-import { DrawerActions, useNavigation } from '@react-navigation/native';
+import { useCallback, useState } from 'react';
+import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
+import { DrawerActions, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/shell/AppHeader';
@@ -19,7 +19,7 @@ import { usePairedComputer } from './usePairedComputer';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- cross-navigator jump (see ChatScreen)
 const toRoot = (navigation: any, screen: string, params?: object) =>
-  navigation.getParent()?.getParent()?.navigate('ChatConversationStack' as never, { screen, params } as never);
+  (navigation.getParent() ?? navigation).navigate('ChatConversationStack' as never, { screen, params } as never);
 
 /** The Dispatch tab: an intro when this phone is not paired, otherwise Dispatch's own thread list. */
 export function DispatchHomeScreen() {
@@ -31,6 +31,13 @@ export function DispatchHomeScreen() {
   const email = useAppSelector((st) => st.auth.session?.email);
   const { paired, isLoading: pairedLoading, error: devicesError, refetch: refetchDevices } = usePairedComputer({ pollMs: 30000 });
   const threads = useGetDispatchThreadsQuery(undefined, { skip: !paired });
+  /* Always fresh on arrival: a thread that just got an answer moves to the top. */
+  useFocusEffect(
+    useCallback(() => {
+      if (paired) void threads.refetch();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [!!paired]),
+  );
   const [newOpen, setNewOpen] = useState(false);
   const [actions, setActions] = useState<ChatThread | null>(null);
   const [renaming, setRenaming] = useState<ChatThread | null>(null);
@@ -54,7 +61,7 @@ export function DispatchHomeScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         {header}
-        <View style={[styles.intro, { paddingBottom: insets.bottom + 24 }]}>
+        <ScrollView contentContainerStyle={[styles.intro, { paddingVertical: 24, paddingBottom: insets.bottom + 24 }]} keyboardShouldPersistTaps="handled">
           <View style={[styles.badge, { backgroundColor: theme.colors.statusInfoBg }]}>
             <Icon name="computer" size={36} color={theme.colors.accent} />
           </View>
@@ -82,7 +89,7 @@ export function DispatchHomeScreen() {
             <Text style={[styles.introText, { color: theme.colors.statusErrorFg }]}>Remote control is switched off for this workspace.</Text>
           )}
           <Button label="Done" onPress={() => toRoot(navigation, 'PairComputer')} fullWidth />
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -148,6 +155,7 @@ export function DispatchHomeScreen() {
             onPress={() => openThread(item)}
             onLongPress={() => setActions(item)}
             canViewCost={false}
+            noAgentLabel="Default model"
             selectable={false}
             selected={false}
             onToggleSelect={() => undefined}
@@ -234,7 +242,7 @@ export function DispatchHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  intro: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 14 },
+  intro: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 14 },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   stepNo: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   badge: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },

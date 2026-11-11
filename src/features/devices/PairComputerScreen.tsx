@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useNavigation } from '@react-navigation/native';
 
 import { AppHeader } from '@/components/shell/AppHeader';
 import { Button, Loader } from '@/components/ui';
 import { env } from '@/config/env';
 import { useAppTheme } from '@/theme/ThemeContext';
 
+import { useIsFocused } from '@react-navigation/native';
+import { useBackToDispatch } from './useBackToDispatch';
 import { useClaimPairingMutation, useGetDevicesQuery } from './devicesApi';
 import { PAIRING_POLL_LIMIT_MS, POLL_MS, parsePairingToken } from './devicesRules';
 import { forgetPhoneSecret, generatePhoneSecret, hashPhoneSecret, savePhoneSecret } from './phoneSecret';
@@ -29,7 +30,8 @@ const deviceName = () => (Platform.OS === 'ios' ? 'iPhone' : 'Android phone');
  */
 export function PairComputerScreen() {
   const { theme } = useAppTheme();
-  const navigation = useNavigation();
+  const goBack = useBackToDispatch();
+  const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
   const [pasted, setPasted] = useState('');
   const [permission, requestPermission] = useCameraPermissions();
@@ -66,22 +68,35 @@ export function PairComputerScreen() {
     }
   };
 
-  /* Poll GET /devices every 3s (via the effect below), stop after 2 minutes. */
+  /* Poll GET /devices every 3s while this screen is in front, stop after 2 minutes.
+     A screen that is not focused (it stays mounted behind the drawer) never polls and
+     never touches the saved secret. On timeout the secret is dropped ONLY if the server
+     really has no ACTIVE phone for this computer: a confirmation that landed just
+     before the limit must not be undone. */
   useEffect(() => {
-    if (phase.name !== 'waiting') return;
+    if (phase.name !== 'waiting' || !isFocused) return;
     const { computerKeyId } = phase;
+    let stopped = false;
     const id = setInterval(() => {
       if (Date.now() - startedAt.current > PAIRING_POLL_LIMIT_MS) {
         clearInterval(id);
-        void forgetPhoneSecret(computerKeyId);
-        setPhase({ name: 'error', message: 'The computer did not confirm the pairing. It was refused or it expired.', retry: true });
+        void devices.refetch().then(async (res) => {
+          if (stopped) return;
+          const active = res.data?.phones.some((p) => p.computerKeyId === computerKeyId && p.status === 'ACTIVE');
+          if (active) return; /* the effect below turns this into "done" */
+          await forgetPhoneSecret(computerKeyId);
+          if (!stopped) setPhase({ name: 'error', message: 'The computer did not confirm the pairing. It was refused or it expired.', retry: true });
+        });
         return;
       }
       void devices.refetch();
     }, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase.name]);
+  }, [phase.name, isFocused]);
 
   useEffect(() => {
     if (phase.name !== 'waiting') return;
@@ -89,7 +104,7 @@ export function PairComputerScreen() {
     if (hit) {
       setPhase({ name: 'done', computerName: phase.computerName });
       /* Paired: leave by itself, the Dispatch tab then opens on its threads. */
-      setTimeout(() => navigation.goBack(), 1200);
+      setTimeout(() => goBack(), 1200);
     }
   }, [devices.data, phase]);
 
@@ -100,7 +115,7 @@ export function PairComputerScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <AppHeader title="Pair your computer" mode="stack" onBack={() => navigation.goBack()} />
+      <AppHeader title="Pair your computer" mode="stack" onBack={() => goBack()} />
       <View style={[styles.body, { paddingBottom: 16 + insets.bottom }]}>
         {phase.name === 'scan' &&
           (!permission ? (
@@ -155,7 +170,7 @@ export function PairComputerScreen() {
         {phase.name === 'done' && (
           <View style={styles.center}>
             <Text style={[styles.text, { color: theme.colors.text }]}>Paired with {phase.computerName}.</Text>
-            <Button label="Done" onPress={() => navigation.goBack()} style={styles.self} />
+            <Button label="Done" onPress={() => goBack()} style={styles.self} />
           </View>
         )}
         {phase.name === 'error' && (

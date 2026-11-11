@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, useToast } from '@/components/ui';
@@ -19,6 +19,7 @@ interface Props {
 export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const toast = useToast();
   const [title, setTitle] = useState('');
   const [agentId, setAgentId] = useState<string | null>(null);
@@ -74,10 +75,12 @@ export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
             style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}
           />
           <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Who does the work</Text>
-          <Option id={null} label="Default model" hint="The workspace's default" />
-          {deployed.slice(0, 6).map((a) => (
-            <Option key={a.id} id={a.id} label={a.name} hint="Agent" />
-          ))}
+          <ScrollView style={{ maxHeight: height * 0.42 }} contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled">
+            <Option id={null} label="Default model" hint="The workspace's default" />
+            {deployed.map((a) => (
+              <Option key={a.id} id={a.id} label={a.name} hint="Agent" />
+            ))}
+          </ScrollView>
           <View style={styles.actions}>
             <Button label="Cancel" variant="secondary" onPress={onClose} />
             <Button label="Create thread" onPress={() => void submit()} loading={isLoading} />

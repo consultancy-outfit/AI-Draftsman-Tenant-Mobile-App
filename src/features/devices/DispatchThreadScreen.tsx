@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -42,6 +42,7 @@ import {
   isFolderNotAllowed,
   isRemoteControlOff,
 } from './devicesRules';
+import { useBackToDispatch } from './useBackToDispatch';
 import { usePairedComputer } from './usePairedComputer';
 
 type Nav = NativeStackNavigationProp<ChatConversationStackParamList>;
@@ -55,7 +56,14 @@ const MESSAGES_POLL_MS = 5000;
  * POST /conversations/{id}/messages: that answers 409). The computer writes
  * its answer into the thread, so messages are polled while a task is active.
  */
+/** Keyed by thread: opening another thread (the route is reused with new params)
+ * starts from clean state, so drafts, folder and progress never leak across threads. */
 export function DispatchThreadScreen() {
+  const { params } = useRoute<Rt>();
+  return <DispatchThread key={params.conversationId} />;
+}
+
+function DispatchThread() {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
@@ -63,6 +71,8 @@ export function DispatchThreadScreen() {
   const toast = useToast();
   const dispatch = useAppDispatch();
   const conversationId = params.conversationId;
+  const goBack = useBackToDispatch();
+  const isFocused = useIsFocused();
 
   const { paired } = usePairedComputer({ pollMs: 30000 });
   const computerKeyId = paired?.computer.id ?? '';
@@ -77,14 +87,14 @@ export function DispatchThreadScreen() {
   const tasks = useGetDeviceTasksQuery({ conversationId }, { skip: !paired });
   const anyActive = (tasks.data ?? []).some(isActiveTask);
   useEffect(() => {
-    if (!anyActive) return;
+    if (!anyActive || !isFocused) return;
     const id = setInterval(() => void tasks.refetch(), TASK_POLL_MS);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anyActive]);
+  }, [anyActive, isFocused]);
 
-  const messages = useGetChatMessagesQuery({ conversationId }, { pollingInterval: anyActive ? MESSAGES_POLL_MS : 0 });
-  const approvals = useGetDeviceApprovalsQuery({ conversationId }, { skip: !paired || !anyActive, pollingInterval: anyActive ? TASK_POLL_MS : 0 });
+  const messages = useGetChatMessagesQuery({ conversationId }, { pollingInterval: isFocused ? MESSAGES_POLL_MS : 0 });
+  const approvals = useGetDeviceApprovalsQuery({ conversationId }, { skip: !paired || !anyActive, pollingInterval: anyActive && isFocused ? TASK_POLL_MS : 0 });
   const artifacts = useGetDeviceArtifactsQuery({ conversationId, computerKeyId }, { skip: !paired });
   const latestArtifacts = useMemo(() => {
     const byName = new Map<string, NonNullable<typeof artifacts.data>[number]>();
@@ -107,6 +117,7 @@ export function DispatchThreadScreen() {
       seenDone.current = doneIds;
       void messages.refetch();
       void artifacts.refetch();
+      dispatch(api.util.invalidateTags(['DispatchThread']));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doneIds]);
@@ -147,6 +158,7 @@ export function DispatchThreadScreen() {
         folderPath: folderTrim || undefined,
       }).unwrap();
       setText('');
+      setFolderOpen(false);
       AsyncStorage.setItem(DISPATCH_FOLDER_KEY(conversationId), folderTrim).catch(() => undefined);
       void messages.refetch();
     } catch (err) {
@@ -155,7 +167,7 @@ export function DispatchThreadScreen() {
         toast.show('This phone is no longer paired. Pair it again to continue.', { tone: 'error' });
         dispatch(api.util.invalidateTags(['DeviceList']));
       } else if (e.status === 403 && isFolderNotAllowed(e.messages ?? [])) {
-        toast.show(FOLDER_NOT_ALLOWED_COPY, { tone: 'error' });
+        toast.show(e.messages?.[0] || FOLDER_NOT_ALLOWED_COPY, { tone: 'error' });
       } else if (e.status === 429) {
         toast.show('Too many requests. Wait a moment and try again.', { tone: 'neutral' });
       } else {
@@ -209,9 +221,42 @@ export function DispatchThreadScreen() {
     );
   };
 
+  const hasWork = (anyActive || (tasks.data ?? []).length > 0 || latestArtifacts.length > 0 || (approvals.data ?? []).length > 0);
+  const workCards = hasWork ? (
+    <View style={{ gap: 8, paddingVertical: 8 }}>
+              {(approvals.data ?? []).map((a) => (
+                <ApprovalCard key={a.id} approval={a} busy={decideState.isLoading} onDecide={(d) => void handleDecide(a.id, d)} />
+              ))}
+              {(tasks.data ?? []).slice(0, anyActive ? 3 : 1).map((t) => (
+                <TaskCard key={t.id} task={t} cancelling={cancelState.isLoading} onCancel={() => void cancel({ taskId: t.id }).unwrap().catch(() => void tasks.refetch())} />
+              ))}
+              {latestArtifacts.length > 0 && (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.body.semibold, fontSize: 13 }}>From your computer</Text>
+                  {latestArtifacts.map((a) => (
+                    <TouchableOpacity
+                      key={a.id}
+                      onPress={() => navigation.navigate('DeviceArtifact', { artifactId: a.id, computerKeyId })}
+                      style={[styles.artifact, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${a.title}`}
+                    >
+                      <Icon name="description" size={18} color={theme.colors.accent} />
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={1} style={{ color: theme.colors.text, fontSize: 13 }}>{a.title}</Text>
+                        <Text numberOfLines={1} style={{ color: theme.colors.textMuted, fontSize: 11 }}>{a.filename}</Text>
+                      </View>
+                      <Text style={{ color: theme.colors.accent, fontSize: 12 }}>Open</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+  ) : null;
+
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
+      <AppHeader title={title} mode="stack" onBack={goBack} />
 
       <View style={styles.subHeader}>
         <Icon name="computer" size={15} color={theme.colors.accent} />
@@ -239,9 +284,10 @@ export function DispatchThreadScreen() {
       ) : messages.error ? (
         <ErrorState title="Could not load this thread" message={getErrorMessage(messages.error)} onRetry={messages.refetch} />
       ) : items.length === 0 ? (
-        <View style={styles.center}>
+        <ScrollView contentContainerStyle={styles.emptyScroll} keyboardShouldPersistTaps="handled">
           <EmptyState icon="computer" title="Nothing here yet" description="Say what your computer should do. Name a folder below, or write the path in your message." />
-        </View>
+          {workCards}
+        </ScrollView>
       ) : (
         <FlatList
           data={items}
@@ -249,40 +295,9 @@ export function DispatchThreadScreen() {
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.transcript}
           keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={workCards}
           renderItem={({ item }) => renderMessage(item)}
         />
-      )}
-
-      {(anyActive || (tasks.data ?? []).length > 0 || latestArtifacts.length > 0 || (approvals.data ?? []).length > 0) && (
-        <ScrollView style={{ maxHeight: 280 }} nestedScrollEnabled keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, padding: 12 }}>
-          {(approvals.data ?? []).map((a) => (
-            <ApprovalCard key={a.id} approval={a} busy={decideState.isLoading} onDecide={(d) => void handleDecide(a.id, d)} />
-          ))}
-          {(tasks.data ?? []).slice(0, anyActive ? 3 : 1).map((t) => (
-            <TaskCard key={t.id} task={t} cancelling={cancelState.isLoading} onCancel={() => void cancel({ taskId: t.id }).unwrap().catch(() => void tasks.refetch())} />
-          ))}
-          {latestArtifacts.length > 0 && (
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.body.semibold, fontSize: 13 }}>From your computer</Text>
-              {latestArtifacts.map((a) => (
-                <TouchableOpacity
-                  key={a.id}
-                  onPress={() => navigation.navigate('DeviceArtifact', { artifactId: a.id, computerKeyId })}
-                  style={[styles.artifact, { borderColor: theme.colors.border, backgroundColor: theme.colors.surface }]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${a.title}`}
-                >
-                  <Icon name="description" size={18} color={theme.colors.accent} />
-                  <View style={{ flex: 1 }}>
-                    <Text numberOfLines={1} style={{ color: theme.colors.text, fontSize: 13 }}>{a.title}</Text>
-                    <Text numberOfLines={1} style={{ color: theme.colors.textMuted, fontSize: 11 }}>{a.filename}</Text>
-                  </View>
-                  <Text style={{ color: theme.colors.accent, fontSize: 12 }}>Open</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </ScrollView>
       )}
 
       <View style={[styles.composer, { borderColor: theme.colors.border, paddingBottom: insets.bottom + 8 }]}>
@@ -340,6 +355,7 @@ export function DispatchThreadScreen() {
 const styles = StyleSheet.create({
   subHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingBottom: 6 },
   notice: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  emptyScroll: { flexGrow: 1, justifyContent: 'center', padding: 16 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   transcript: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, flexGrow: 1, justifyContent: 'flex-end' },
   artifact: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 10, padding: 10 },

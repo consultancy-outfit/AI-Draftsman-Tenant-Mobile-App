@@ -22,6 +22,8 @@ import { forgetPhoneSecret, loadPhoneSecret } from './phoneSecret';
  * a URL. Never use the /computer/* routes: they belong to the desktop app.
  */
 
+const FORBIDDEN_STILL_PAIRED = 'FORBIDDEN_STILL_PAIRED';
+
 const NOT_PAIRED: ApiQueryError = {
   status: 403,
   messages: ['This phone is not paired with a computer.'],
@@ -34,10 +36,32 @@ const NOT_PAIRED: ApiQueryError = {
 export const isUnpairedError = (e: unknown): boolean => {
   const err = e as Partial<ApiQueryError> | undefined;
   if (err?.status !== 403) return false;
+  /* Already checked against the server: the phone IS still paired. */
+  if (err.code === FORBIDDEN_STILL_PAIRED) return false;
   const messages = err.messages ?? [];
   /* The other two 403s are about permissions, not about the pairing. */
   return !isRemoteControlOff(messages) && !isFolderNotAllowed(messages);
 };
+
+type BaseQ = (args: ApiRequestArgs) => PromiseLike<{ data?: unknown; error?: unknown }>;
+
+/**
+ * A 403 alone never makes the phone forget its secret. Ask the server first:
+ * only when this computer has no ACTIVE phone for us is the pairing really
+ * gone. If that check fails (offline, 5xx) the secret is kept. Returns the
+ * error to hand back to the caller (marked "still paired" when it is).
+ */
+async function settle403(baseQuery: BaseQ, computerKeyId: string, error: unknown): Promise<ApiQueryError> {
+  const err = error as ApiQueryError;
+  if (!isUnpairedError(err)) return err;
+  const check = await baseQuery({ url: '/devices' });
+  const list = check.data as DeviceList | undefined;
+  if (check.error || !list) return { ...err, code: FORBIDDEN_STILL_PAIRED };
+  const stillActive = list.phones.some((p) => p.computerKeyId === computerKeyId && p.status === 'ACTIVE');
+  if (stillActive) return { ...err, code: FORBIDDEN_STILL_PAIRED };
+  await forgetPhoneSecret(computerKeyId);
+  return err;
+}
 
 export const devicesApi = api.injectEndpoints({
   endpoints: (build) => ({
@@ -112,12 +136,11 @@ export const devicesApi = api.injectEndpoints({
           },
         } satisfies ApiRequestArgs);
         if (res.error) {
-          if (isUnpairedError(res.error)) await forgetPhoneSecret(input.computerKeyId);
-          return { error: res.error as ApiQueryError };
+          return { error: await settle403(baseQuery as unknown as BaseQ, input.computerKeyId, res.error) };
         }
         return { data: res.data as DeviceTask };
       },
-      invalidatesTags: ['DeviceTask', 'DeviceList'],
+      invalidatesTags: ['DeviceTask', 'DeviceList', 'DispatchThread'],
     }),
 
     cancelDeviceTask: build.mutation<unknown, { taskId: string }>({
@@ -143,8 +166,7 @@ export const devicesApi = api.injectEndpoints({
           body: { decision, phone_token: secret },
         });
         if (res.error) {
-          if (isUnpairedError(res.error)) await forgetPhoneSecret(computerKeyId);
-          return { error: res.error as ApiQueryError };
+          return { error: await settle403(baseQuery as unknown as BaseQ, computerKeyId, res.error) };
         }
         return { data: res.data as { id: string; status: 'ALLOWED' | 'DENIED' } };
       },
@@ -162,8 +184,7 @@ export const devicesApi = api.injectEndpoints({
           headers: { 'x-phone-token': secret },
         });
         if (res.error) {
-          if (isUnpairedError(res.error)) await forgetPhoneSecret(computerKeyId);
-          return { error: res.error as ApiQueryError };
+          return { error: await settle403(baseQuery as unknown as BaseQ, computerKeyId, res.error) };
         }
         return { data: res.data as DeviceArtifactSummary[] };
       },
@@ -176,8 +197,7 @@ export const devicesApi = api.injectEndpoints({
         if (!secret) return { error: NOT_PAIRED };
         const res = await baseQuery({ url: `/devices/artifacts/${artifactId}`, headers: { 'x-phone-token': secret } });
         if (res.error) {
-          if (isUnpairedError(res.error)) await forgetPhoneSecret(computerKeyId);
-          return { error: res.error as ApiQueryError };
+          return { error: await settle403(baseQuery as unknown as BaseQ, computerKeyId, res.error) };
         }
         return { data: res.data as DeviceArtifact };
       },
