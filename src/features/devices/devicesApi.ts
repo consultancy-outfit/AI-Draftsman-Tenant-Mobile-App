@@ -13,6 +13,7 @@ import type {
   SendTaskInput,
 } from './devices.types';
 import { isFolderNotAllowed, isRemoteControlOff } from './devicesRules';
+import { clearRegisteredPushToken, loadRegisteredPushToken } from './pushNotifications';
 import { forgetPhoneSecret, loadPhoneSecret } from './phoneSecret';
 
 /**
@@ -82,6 +83,13 @@ export const devicesApi = api.injectEndpoints({
       queryFn: async ({ phoneId, computerKeyId }, _api, _x, baseQuery) => {
         const res = await baseQuery({ url: `/devices/phones/${phoneId}`, method: 'DELETE' });
         if (res.error) return { error: res.error as ApiQueryError };
+        /* Best effort: stop pushes for this phone, then forget everything local. */
+        const secret = await loadPhoneSecret(computerKeyId);
+        const expoToken = await loadRegisteredPushToken(computerKeyId);
+        if (secret && expoToken) {
+          await baseQuery({ url: '/devices/push-tokens/remove', method: 'POST', body: { phone_token: secret, expo_token: expoToken } });
+        }
+        await clearRegisteredPushToken(computerKeyId);
         await forgetPhoneSecret(computerKeyId);
         return { data: res.data };
       },
@@ -111,6 +119,21 @@ export const devicesApi = api.injectEndpoints({
     deleteDispatchThread: build.mutation<unknown, { id: string }>({
       query: ({ id }) => ({ url: `/conversations/${id}`, method: 'DELETE' }),
       invalidatesTags: ['DispatchThread'],
+    }),
+
+    /* Push: the phone's secret goes in the body (never a URL, never logged). */
+    registerPushToken: build.mutation<unknown, { computerKeyId: string; expoToken: string; platform: 'ios' | 'android' }>({
+      queryFn: async ({ computerKeyId, expoToken, platform }, _api, _x, baseQuery) => {
+        const secret = await loadPhoneSecret(computerKeyId);
+        if (!secret) return { error: NOT_PAIRED };
+        const res = await baseQuery({
+          url: '/devices/push-tokens',
+          method: 'POST',
+          body: { computer_key_id: computerKeyId, phone_token: secret, expo_token: expoToken, platform },
+        });
+        if (res.error) return { error: res.error as ApiQueryError };
+        return { data: res.data };
+      },
     }),
 
     getDeviceTasks: build.query<DeviceTask[], { conversationId: string }>({
@@ -213,6 +236,7 @@ export const {
   useDeleteDispatchThreadMutation,
   useClaimPairingMutation,
   useRemovePhoneMutation,
+  useRegisterPushTokenMutation,
   useGetDeviceTasksQuery,
   useSendDeviceTaskMutation,
   useCancelDeviceTaskMutation,

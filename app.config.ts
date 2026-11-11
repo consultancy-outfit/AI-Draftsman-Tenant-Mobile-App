@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import type { ExpoConfig, ConfigContext } from 'expo/config';
 
 /**
@@ -76,6 +77,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   android: {
     package: `ai.aidraftsman.tenant${bundleSuffix}`,
+    /* Firebase config for Android push; only wired in when the file is present. */
+    ...(existsSync('./google-services.json') ? { googleServicesFile: './google-services.json' } : {}),
     adaptiveIcon: {
       backgroundColor: '#F4F2EE',
       foregroundImage: './assets/android-icon-foreground.png',
@@ -117,6 +120,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
+    /* Dispatch push (Expo). Android needs the Firebase file below to receive pushes; iOS needs an APNs key in EAS. */
+    ['expo-notifications', { color: '#C8622A' }],
     ['expo-camera', { cameraPermission: 'Used to scan the pairing code shown on your computer.', recordAudioAndroid: false }],
     /*
      * Android release optimisation — Play Console flagged "DEX code
