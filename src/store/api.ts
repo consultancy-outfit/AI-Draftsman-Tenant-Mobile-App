@@ -80,7 +80,7 @@ export const api = createApi({
     /* The respondent's own assignments, keyed by assignment id + `LIST`. */
     'MySurvey',
     /* Dispatch: paired computers/phones, tasks, approvals, artifacts. */
-    'DeviceList',
+    'DeviceList','DispatchThread',
     'DeviceTask',
     'DeviceApproval',
     'DeviceArtifact',

@@ -1,4 +1,4 @@
-import type { ApprovalKind, DeviceTask, DeviceTaskStatus } from './devices.types';
+import type { ApprovalKind, DesktopRun, DeviceTask, DeviceTaskStatus, PhoneScope } from './devices.types';
 
 export const POLL_MS = 3000;
 export const PAIRING_POLL_LIMIT_MS = 2 * 60 * 1000;
@@ -60,3 +60,40 @@ export function parsePairingToken(data: string): string | null {
     return null;
   }
 }
+
+/** The 403 for a phone that lacks the any_folder permission (the phone IS still paired). */
+export const isFolderNotAllowed = (messages: string[]) => messages.some((m) => /may not name a folder/i.test(m));
+
+export const SCOPE_LABEL: Record<PhoneScope, string> = {
+  read: 'Read files',
+  outputs: 'Send results to the phone',
+  delete: 'Delete files',
+  shell: 'Run commands',
+  connectors: 'Use connectors',
+  any_folder: 'Work in a folder I name',
+};
+
+export const FOLDER_NOT_ALLOWED_COPY =
+  'This phone may not name a folder. On the computer, allow "Work in a folder I name" for this phone.';
+
+/** Client-side mirror of the server's folder_path rules, so the common slips are caught before sending. */
+export function folderPathProblem(path: string): string | null {
+  const p = path.trim();
+  if (!p) return null;
+  if (p.length > 500) return 'That folder path is too long (500 characters at most).';
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f]/.test(p)) return 'That folder path has characters that are not allowed.';
+  if (/(^|[\\/])\.\.([\\/]|$)/.test(p)) return 'Leave out ".." from the folder path.';
+  if (p.startsWith('\\\\') || p.startsWith('//')) return 'A network share cannot be used. Type a full path on the computer.';
+  if (!/^([a-zA-Z]:[\\/]|\/)/.test(p)) return 'Type the full path, for example D:\\Projects\\sales or /home/me/work.';
+  return null;
+}
+
+/** The desktop's answer carries `richContent: [{ kind: "desktop_run", ... }]`. */
+export function getDesktopRun(richContent: unknown): DesktopRun | null {
+  if (!Array.isArray(richContent)) return null;
+  const run = richContent.find((x) => x && typeof x === 'object' && (x as { kind?: unknown }).kind === 'desktop_run');
+  return (run as DesktopRun | undefined) ?? null;
+}
+
+export const DISPATCH_FOLDER_KEY = (conversationId: string) => `dispatch.folder.${conversationId}`;

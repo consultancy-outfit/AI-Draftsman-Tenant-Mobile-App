@@ -32,7 +32,6 @@ import {
   threadDisplayName,
 } from './chatRules';
 import { ownsTurn, useRetryChatMessageMutation } from './chatApi';
-import { SendToComputerPanel } from '@/features/devices/components/SendToComputerPanel';
 import { useChatConversation } from './useChatConversation';
 import { useComposerAttachments } from './useComposerAttachments';
 import { Composer } from './components/Composer';
@@ -382,15 +381,6 @@ export function ChatConversationScreen() {
           canCancel={canCancelRun}
           isCancelling={isCancellingRun}
           onCancel={() => void handleCancelRun()}
-        />
-      )}
-
-      {thread && !isTeam && canSend && (
-        <SendToComputerPanel
-          thread={thread}
-          onPair={() => navigation.navigate('PairComputer')}
-          onOpenArtifact={(artifactId, computerKeyId) => navigation.navigate('DeviceArtifact', { artifactId, computerKeyId })}
-          onTaskDone={conversation.refetchMessages}
         />
       )}
 

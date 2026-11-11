@@ -53,6 +53,10 @@ export type KnowledgeBasesStackParamList = {
   KnowledgeBaseUpload: { id: string };
 };
 
+export type DispatchStackParamList = {
+  DispatchHome: undefined;
+};
+
 export type ChatStackParamList = {
   /** `newTeamThread` arrives from Agents Teams ("New team chat", or a
    * builder team's "Chat"): open on the Teams tab with the New thread form
@@ -80,6 +84,8 @@ export type ChatConversationStackParamList = {
   ChatThreadSearch: undefined;
   /** Dispatch: scan the desktop's QR to pair this phone. */
   PairComputer: undefined;
+  /** A Dispatch thread: work is sent to the computer from here. */
+  DispatchThread: { conversationId: string; title?: string };
   /** A text file the computer published to this phone. */
   DeviceArtifact: { artifactId: string; computerKeyId: string };
 };
@@ -250,6 +256,7 @@ export type AppTabParamList = {
   DashboardTab: undefined;
   CompanyAgentsTab: undefined;
   ChatTab: undefined;
+  DispatchTab: undefined;
   MarketplaceTab: undefined;
   SettingsTab: undefined;
 };

@@ -1,6 +1,8 @@
 import { api } from '@/store/api';
 import type { ApiQueryError, ApiRequestArgs } from '@/store/baseQuery';
 
+import type { ChatThread, ChatThreadPage } from '@/features/chat/chat.types';
+
 import type {
   ClaimPairingResult,
   DeviceApproval,
@@ -10,7 +12,7 @@ import type {
   DeviceTask,
   SendTaskInput,
 } from './devices.types';
-import { isRemoteControlOff } from './devicesRules';
+import { isFolderNotAllowed, isRemoteControlOff } from './devicesRules';
 import { forgetPhoneSecret, loadPhoneSecret } from './phoneSecret';
 
 /**
@@ -31,7 +33,10 @@ const NOT_PAIRED: ApiQueryError = {
 /** A 403 that is not about "remote control off" means this phone is no longer paired. */
 export const isUnpairedError = (e: unknown): boolean => {
   const err = e as Partial<ApiQueryError> | undefined;
-  return err?.status === 403 && !isRemoteControlOff(err.messages ?? []);
+  if (err?.status !== 403) return false;
+  const messages = err.messages ?? [];
+  /* The other two 403s are about permissions, not about the pairing. */
+  return !isRemoteControlOff(messages) && !isFolderNotAllowed(messages);
 };
 
 export const devicesApi = api.injectEndpoints({
@@ -59,6 +64,31 @@ export const devicesApi = api.injectEndpoints({
       invalidatesTags: ['DeviceList'],
     }),
 
+    /* Dispatch's own thread list: never mixed with Chat's. */
+    getDispatchThreads: build.query<ChatThreadPage, void>({
+      query: () => ({ url: '/devices/dispatch/threads', query: { limit: 50 } }),
+      providesTags: ['DispatchThread'],
+    }),
+
+    createDispatchThread: build.mutation<ChatThread, { title?: string; agentId?: string }>({
+      query: ({ title, agentId }) => ({
+        url: '/devices/dispatch/threads',
+        method: 'POST',
+        body: { ...(title ? { title: title.slice(0, 120) } : null), ...(agentId ? { agent_id: agentId } : null) },
+      }),
+      invalidatesTags: ['DispatchThread'],
+    }),
+
+    renameDispatchThread: build.mutation<unknown, { id: string; title: string }>({
+      query: ({ id, title }) => ({ url: `/conversations/${id}`, method: 'PATCH', body: { title } }),
+      invalidatesTags: ['DispatchThread'],
+    }),
+
+    deleteDispatchThread: build.mutation<unknown, { id: string }>({
+      query: ({ id }) => ({ url: `/conversations/${id}`, method: 'DELETE' }),
+      invalidatesTags: ['DispatchThread'],
+    }),
+
     getDeviceTasks: build.query<DeviceTask[], { conversationId: string }>({
       query: ({ conversationId }) => ({ url: '/devices/tasks', query: { conversation_id: conversationId } }),
       providesTags: ['DeviceTask'],
@@ -76,6 +106,7 @@ export const devicesApi = api.injectEndpoints({
             conversation_id: input.conversationId,
             text: input.text,
             target: input.target,
+            ...(input.folderPath ? { folder_path: input.folderPath } : null),
             ...(input.agentName ? { agent_name: input.agentName.slice(0, 120) } : null),
             phone_token: secret,
           },
@@ -156,6 +187,10 @@ export const devicesApi = api.injectEndpoints({
 
 export const {
   useGetDevicesQuery,
+  useGetDispatchThreadsQuery,
+  useCreateDispatchThreadMutation,
+  useRenameDispatchThreadMutation,
+  useDeleteDispatchThreadMutation,
   useClaimPairingMutation,
   useRemovePhoneMutation,
   useGetDeviceTasksQuery,

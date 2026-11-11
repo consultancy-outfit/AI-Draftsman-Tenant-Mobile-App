@@ -1,6 +1,6 @@
 /** Dispatch ("send work to my computer") wire types — see the mobile handoff doc. */
 
-export type PhoneScope = 'read' | 'outputs' | 'delete' | 'shell' | 'connectors';
+export type PhoneScope = 'read' | 'outputs' | 'delete' | 'shell' | 'connectors' | 'any_folder';
 
 export interface DeviceComputer {
   id: string;
@@ -55,6 +55,8 @@ export interface SendTaskInput {
   text: string;
   target: string;
   agentName?: string;
+  /** Full path of a folder on the computer (needs the any_folder permission). */
+  folderPath?: string;
 }
 
 export type ApprovalKind = 'write' | 'exec' | 'net' | 'publish' | 'other';
@@ -86,4 +88,13 @@ export interface DeviceArtifactSummary {
 
 export interface DeviceArtifact extends DeviceArtifactSummary {
   content: string;
+}
+
+/** One entry in a desktop answer's `richContent` (kind "desktop_run"). */
+export interface DesktopRun {
+  kind: 'desktop_run';
+  outcome: 'completed' | 'stopped' | 'failed';
+  /** The FULL path in Dispatch threads, or "This computer" when no folder was involved. */
+  folderName: string;
+  steps: Array<{ tool: string; label: string; ok: boolean }>;
 }
