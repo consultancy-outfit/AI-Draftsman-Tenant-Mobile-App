@@ -9,6 +9,7 @@ import { ThreadCard } from '@/features/chat/components/ThreadCard';
 import type { ChatThread } from '@/features/chat/chat.types';
 import { threadDisplayName } from '@/features/chat/chatRules';
 import { getErrorMessage } from '@/services/apiErrorMessage';
+import { useAppSelector } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
 
 import { NewDispatchThreadSheet } from './components/NewDispatchThreadSheet';
@@ -27,6 +28,7 @@ export function DispatchHomeScreen() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const toast = useToast();
+  const email = useAppSelector((st) => st.auth.session?.email);
   const { paired, isLoading: pairedLoading, error: devicesError, refetch: refetchDevices } = usePairedComputer({ pollMs: 30000 });
   const threads = useGetDispatchThreadsQuery(undefined, { skip: !paired });
   const [newOpen, setNewOpen] = useState(false);
@@ -56,15 +58,30 @@ export function DispatchHomeScreen() {
           <View style={[styles.badge, { backgroundColor: theme.colors.statusInfoBg }]}>
             <Icon name="computer" size={36} color={theme.colors.accent} />
           </View>
-          <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.display.semibold, fontSize: 22, textAlign: 'center' }}>Dispatch</Text>
-          <Text style={[styles.introText, { color: theme.colors.textMuted }]}>
-            Your phone is like a walkie-talkie for your computer. Name a folder, or write the path in your message, and say what to do. The answer comes back to the same thread.
+          <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.display.semibold, fontSize: 22, textAlign: 'center' }}>
+            Set up Dispatch on your computer first
           </Text>
-          <Text style={[styles.introText, { color: theme.colors.textMuted }]}>Keep the computer on and signed in.</Text>
+          <View style={{ gap: 14, alignSelf: 'stretch', paddingHorizontal: 8 }}>
+            {[
+              'Open the latest AIDraftsMan Desktop app on your computer.',
+              email ? `Sign in as ${email}.` : 'Sign in with the same account as on this phone.',
+              'Go to Computer › Pair a phone. A QR code appears.',
+            ].map((t, i) => (
+              <View key={i} style={styles.step}>
+                <View style={[styles.stepNo, { backgroundColor: theme.colors.statusInfoBg }]}>
+                  <Text style={{ color: theme.colors.accent, fontSize: 13, fontFamily: theme.fontFamilies.body.semibold }}>{i + 1}</Text>
+                </View>
+                <Text style={{ color: theme.colors.text, fontSize: 14, lineHeight: 21, flex: 1 }}>{t}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={[styles.introText, { color: theme.colors.textMuted }]}>
+            Then tap Done and scan the code. Your phone pairs as soon as the computer confirms.
+          </Text>
           {remoteOff && (
             <Text style={[styles.introText, { color: theme.colors.statusErrorFg }]}>Remote control is switched off for this workspace.</Text>
           )}
-          <Button label="Get started" onPress={() => toRoot(navigation, 'PairComputer')} />
+          <Button label="Done" onPress={() => toRoot(navigation, 'PairComputer')} fullWidth />
         </View>
       </View>
     );
@@ -218,6 +235,8 @@ export function DispatchHomeScreen() {
 
 const styles = StyleSheet.create({
   intro: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 14 },
+  step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  stepNo: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   badge: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   introText: { fontSize: 14, lineHeight: 21, textAlign: 'center' },
   list: { padding: 16 },

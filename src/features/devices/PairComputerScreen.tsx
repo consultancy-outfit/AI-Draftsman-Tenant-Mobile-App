@@ -86,7 +86,11 @@ export function PairComputerScreen() {
   useEffect(() => {
     if (phase.name !== 'waiting') return;
     const hit = devices.data?.phones.find((p) => p.computerKeyId === phase.computerKeyId && p.status === 'ACTIVE');
-    if (hit) setPhase({ name: 'done', computerName: phase.computerName });
+    if (hit) {
+      setPhase({ name: 'done', computerName: phase.computerName });
+      /* Paired: leave by itself, the Dispatch tab then opens on its threads. */
+      setTimeout(() => navigation.goBack(), 1200);
+    }
   }, [devices.data, phase]);
 
   const retry = () => {
