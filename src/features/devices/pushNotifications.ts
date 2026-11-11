@@ -55,6 +55,7 @@ export function parseDispatchPushData(data: unknown): DispatchPushData | null {
 
 /** Show notifications while the app is open too (a permission question must not be missed). */
 export function configurePushHandler(): void {
+  if (!isPushConfigured()) return;
   const N = load();
   if (!N) return;
   try {
@@ -66,8 +67,12 @@ export function configurePushHandler(): void {
   }
 }
 
+/** Push is off until the build is configured for it (see `pushEnabled` in app.config.ts). */
+export const isPushConfigured = (): boolean => (Constants.expoConfig?.extra as { pushEnabled?: boolean } | undefined)?.pushEnabled === true;
+
 /** Asks for permission (once) and returns this device's Expo push token, or null. */
 export async function getExpoPushToken(): Promise<string | null> {
+  if (!isPushConfigured()) return null; /* no permission prompt, no registration */
   const N = load();
   if (!N) return null;
   try {
@@ -95,6 +100,7 @@ export const clearRegisteredPushToken = (computerKeyId: string) => AsyncStorage.
 
 /** Calls `onOpen` for every tap on one of OUR notifications, including the one that launched the app. */
 export function subscribeToPushTaps(onOpen: (data: DispatchPushData) => void): () => void {
+  if (!isPushConfigured()) return () => undefined;
   const N = load();
   if (!N) return () => undefined;
   try {

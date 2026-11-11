@@ -170,6 +170,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   extra: {
     appEnv: APP_ENV,
+    /*
+     * Dispatch push is only switched on once it is configured: either the
+     * Firebase file is in the project (Android) or PUSH_ENABLED=1 is set for the
+     * build (e.g. an iOS build whose APNs key is already in EAS). Until then the
+     * app never asks for the notification permission and never registers a token.
+     */
+    pushEnabled: existsSync('./google-services.json') || process.env.PUSH_ENABLED === '1',
     eas: {
       projectId: 'c237be2a-2e1b-4544-9184-3d7db85e95d9',
     },
