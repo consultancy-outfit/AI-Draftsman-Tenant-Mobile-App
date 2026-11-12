@@ -1,7 +1,7 @@
 import { api } from '@/store/api';
 import type { ApiQueryError, ApiRequestArgs } from '@/store/baseQuery';
 
-import type { ChatThread, ChatThreadPage } from '@/features/chat/chat.types';
+import type { ChatMessage, ChatThread, ChatThreadPage } from '@/features/chat/chat.types';
 
 import type {
   ClaimPairingResult,
@@ -121,6 +121,15 @@ export const devicesApi = api.injectEndpoints({
       invalidatesTags: ['DispatchThread'],
     }),
 
+    /* One page of a thread's messages (newest first) WITHOUT touching the polled
+       head: older pages are kept by the screen itself, a refetch never drops them. */
+    getDispatchMessagesPage: build.query<{ items: ChatMessage[]; nextCursor: string | null; hasMore: boolean }, { conversationId: string; cursor?: string }>({
+      query: ({ conversationId, cursor }) => ({
+        url: `/conversations/${conversationId}/messages`,
+        query: cursor ? { limit: 50, cursor } : { limit: 50 },
+      }),
+    }),
+
     /* Push: the phone's secret goes in the body (never a URL, never logged). */
     registerPushToken: build.mutation<unknown, { computerKeyId: string; expoToken: string; platform: 'ios' | 'android' }>({
       queryFn: async ({ computerKeyId, expoToken, platform }, _api, _x, baseQuery) => {
@@ -237,6 +246,7 @@ export const {
   useClaimPairingMutation,
   useRemovePhoneMutation,
   useRegisterPushTokenMutation,
+  useLazyGetDispatchMessagesPageQuery,
   useGetDeviceTasksQuery,
   useSendDeviceTaskMutation,
   useCancelDeviceTaskMutation,

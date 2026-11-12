@@ -19,7 +19,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
 
 import { ApprovalCard } from './components/ApprovalCard';
-import { DesktopRunHeader } from './components/DesktopRunHeader';
+import { DesktopRunHeader, NoStepsWarning, isNoStepsRun } from './components/DesktopRunHeader';
 import { TaskCard } from './components/TaskCard';
 import {
   isUnpairedError,
@@ -28,6 +28,7 @@ import {
   useGetDeviceApprovalsQuery,
   useGetDeviceArtifactsQuery,
   useGetDeviceTasksQuery,
+  useLazyGetDispatchMessagesPageQuery,
   useSendDeviceTaskMutation,
 } from './devicesApi';
 import {
@@ -94,6 +95,26 @@ function DispatchThread() {
   }, [anyActive, isFocused]);
 
   const messages = useGetChatMessagesQuery({ conversationId }, { pollingInterval: isFocused ? MESSAGES_POLL_MS : 0 });
+  /* Older pages (kept here: the polled head is replaced on every refresh). */
+  const [older, setOlder] = useState<{ items: ChatMessage[]; cursor: string | null; hasMore: boolean } | null>(null);
+  const [fetchPage, pageState] = useLazyGetDispatchMessagesPageQuery();
+  const headIds = useMemo(() => new Set((messages.data?.items ?? []).map((m) => m.id)), [messages.data]);
+  const allMessages = useMemo(
+    () => [...(messages.data?.items ?? []), ...(older?.items ?? []).filter((m) => !headIds.has(m.id))],
+    [messages.data, older, headIds],
+  );
+  const nextCursor = older ? older.cursor : messages.data?.nextCursor ?? null;
+  const hasEarlier = older ? older.hasMore : messages.data?.hasMore ?? false;
+  const loadEarlier = async () => {
+    if (!nextCursor || pageState.isFetching) return;
+    try {
+      const page = await fetchPage({ conversationId, cursor: nextCursor }).unwrap();
+      setOlder((prev) => ({ items: [...(prev?.items ?? []), ...page.items], cursor: page.nextCursor, hasMore: page.hasMore }));
+    } catch (err) {
+      toast.show(getErrorMessage(err as never, 'Could not load earlier messages.'), { tone: 'error' });
+    }
+  };
+
   const approvals = useGetDeviceApprovalsQuery({ conversationId }, { skip: !paired || !anyActive, pollingInterval: anyActive && isFocused ? TASK_POLL_MS : 0 });
   const artifacts = useGetDeviceArtifactsQuery({ conversationId, computerKeyId }, { skip: !paired });
   const latestArtifacts = useMemo(() => {
@@ -117,6 +138,7 @@ function DispatchThread() {
       seenDone.current = doneIds;
       void messages.refetch();
       void artifacts.refetch();
+      void threadQuery.refetch(); /* the server names an untitled thread from its first message */
       dispatch(api.util.invalidateTags(['DispatchThread']));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -148,15 +170,31 @@ function DispatchThread() {
 
   const handleSend = async () => {
     if (!canSend || !target || !thread) return;
+    const input = {
+      computerKeyId,
+      conversationId,
+      text: trimmed,
+      target,
+      agentName: isAgent ? thread.agentName ?? undefined : undefined,
+      folderPath: folderTrim || undefined,
+    };
     try {
-      await send({
-        computerKeyId,
-        conversationId,
-        text: trimmed,
-        target,
-        agentName: isAgent ? thread.agentName ?? undefined : undefined,
-        folderPath: folderTrim || undefined,
-      }).unwrap();
+      try {
+        await send(input).unwrap();
+      } catch (first) {
+        /* 429: wait as told, then try ONCE more (never loop). */
+        const f = first as { status?: number | string; retryAfterSeconds?: number };
+        if (f.status !== 429) throw first;
+        const waitS = f.retryAfterSeconds ?? 3;
+        if (waitS > 15) {
+          /* A long limit (minutes) is not worth waiting for on screen: say so instead. */
+          const mins = Math.ceil(waitS / 60);
+          toast.show(`Too many sends. Try again in about ${mins} minute${mins === 1 ? '' : 's'}.`, { tone: 'neutral' });
+          return;
+        }
+        await new Promise((r) => setTimeout(r, Math.max(waitS, 1) * 1000));
+        await send(input).unwrap();
+      }
       setText('');
       setFolderOpen(false);
       AsyncStorage.setItem(DISPATCH_FOLDER_KEY(conversationId), folderTrim).catch(() => undefined);
@@ -198,7 +236,7 @@ function DispatchThread() {
   };
 
   const title = threadDisplayName(thread?.title ?? params.title ?? '');
-  const items = messages.data?.items ?? [];
+  const items = allMessages;
   const taskErr = tasks.error as { status?: number; messages?: string[] } | undefined;
   const remoteOff = taskErr?.status === 403 && isRemoteControlOff(taskErr.messages ?? []);
   const presence = paired ? computerPresence(paired.computer.lastSeenAt) : 'offline';
@@ -207,7 +245,7 @@ function DispatchThread() {
     ? { text: 'This phone is not paired with a computer.', action: 'Pair', onPress: () => navigation.navigate('PairComputer') }
     : remoteOff
       ? { text: 'Remote control is switched off for this workspace.' }
-      : presence === 'offline'
+      : presence !== 'online'
         ? { text: 'Your computer looks offline. Work you send waits until it is on and signed in.' }
         : null;
 
@@ -217,6 +255,7 @@ function DispatchThread() {
       <View key={m.id}>
         {run ? <DesktopRunHeader run={run} /> : null}
         <MessageBubble message={m} isOwnTurn={false} canViewCost={false} onRetry={() => undefined} onCopy={handleCopy} />
+        {isNoStepsRun(run) ? <NoStepsWarning /> : null}
       </View>
     );
   };
@@ -296,6 +335,13 @@ function DispatchThread() {
           contentContainerStyle={styles.transcript}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={workCards}
+          ListFooterComponent={
+            hasEarlier ? (
+              <TouchableOpacity onPress={() => void loadEarlier()} disabled={pageState.isFetching} style={styles.loadEarlier} accessibilityRole="button">
+                <Text style={{ color: theme.colors.accent, fontSize: 13 }}>{pageState.isFetching ? 'Loading…' : 'Load earlier messages'}</Text>
+              </TouchableOpacity>
+            ) : null
+          }
           renderItem={({ item }) => renderMessage(item)}
         />
       )}
@@ -356,6 +402,7 @@ const styles = StyleSheet.create({
   subHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingBottom: 6 },
   notice: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   emptyScroll: { flexGrow: 1, justifyContent: 'center', padding: 16 },
+  loadEarlier: { alignSelf: 'center', paddingVertical: 10 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   transcript: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, flexGrow: 1, justifyContent: 'flex-end' },
   artifact: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 10, padding: 10 },

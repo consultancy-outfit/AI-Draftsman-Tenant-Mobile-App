@@ -48,3 +48,24 @@ const styles = StyleSheet.create({
   wrap: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, padding: 8, gap: 4, alignSelf: 'stretch', marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
+
+/** Shown under a completed desktop answer in which no tool ran (handoff J5a): the model may have guessed. */
+export function isNoStepsRun(run: DesktopRun | null): boolean {
+  return !!run && run.outcome === 'completed' && (run.steps ?? []).length === 0;
+}
+
+export function NoStepsWarning() {
+  const { theme } = useAppTheme();
+  return (
+    <View style={[warnStyles.wrap, { backgroundColor: theme.colors.statusWarningBg }]}>
+      <Icon name="warning" size={14} color={theme.colors.statusWarningFg} />
+      <Text style={{ color: theme.colors.statusWarningFg, fontSize: 12, flex: 1 }}>
+        No files or commands were used for this answer, so it did not look at this computer.
+      </Text>
+    </View>
+  );
+}
+
+const warnStyles = StyleSheet.create({
+  wrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, borderRadius: 8, padding: 8, marginTop: 2, marginBottom: 4, alignSelf: 'flex-start', maxWidth: '92%' },
+});
