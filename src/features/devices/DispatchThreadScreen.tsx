@@ -260,6 +260,9 @@ function DispatchThread() {
     );
   };
 
+  /* Is a desktop answer already in the thread for a task that started at `createdAt`? */
+  const hasAnswerAfter = (createdAt: string) =>
+    allMessages.some((m) => m.providerServed === 'desktop' && new Date(m.createdAt).getTime() >= new Date(createdAt).getTime());
   const hasWork = (anyActive || (tasks.data ?? []).length > 0 || latestArtifacts.length > 0 || (approvals.data ?? []).length > 0);
   const workCards = hasWork ? (
     <View style={{ gap: 8, paddingVertical: 8 }}>
@@ -267,7 +270,7 @@ function DispatchThread() {
                 <ApprovalCard key={a.id} approval={a} busy={decideState.isLoading} onDecide={(d) => void handleDecide(a.id, d)} />
               ))}
               {(tasks.data ?? []).slice(0, anyActive ? 3 : 1).map((t) => (
-                <TaskCard key={t.id} task={t} cancelling={cancelState.isLoading} onCancel={() => void cancel({ taskId: t.id }).unwrap().catch(() => void tasks.refetch())} />
+                <TaskCard key={t.id} task={t} answerInThread={hasAnswerAfter(t.createdAt)} cancelling={cancelState.isLoading} onCancel={() => void cancel({ taskId: t.id }).unwrap().catch(() => void tasks.refetch())} />
               ))}
               {latestArtifacts.length > 0 && (
                 <View style={{ gap: 6 }}>

@@ -17,6 +17,7 @@ export interface PairedComputer {
 export function usePairedComputer(opts: { pollMs?: number } = {}) {
   const query = useGetDevicesQuery(undefined, { pollingInterval: opts.pollMs ?? 0, refetchOnFocus: true });
   const [withSecret, setWithSecret] = useState<Set<string>>(new Set());
+  const [checked, setChecked] = useState(false);
 
   const activePhones = useMemo(() => (query.data?.phones ?? []).filter((p) => p.status === 'ACTIVE'), [query.data]);
   const keyIds = activePhones.map((p) => p.computerKeyId).join('|');
@@ -24,7 +25,9 @@ export function usePairedComputer(opts: { pollMs?: number } = {}) {
   useEffect(() => {
     let live = true;
     void Promise.all(activePhones.map(async (p) => ((await loadPhoneSecret(p.computerKeyId)) ? p.computerKeyId : null))).then((ids) => {
-      if (live) setWithSecret(new Set(ids.filter((x): x is string => !!x)));
+      if (!live) return;
+      setWithSecret(new Set(ids.filter((x): x is string => !!x)));
+      setChecked(true);
     });
     return () => {
       live = false;
@@ -41,5 +44,10 @@ export function usePairedComputer(opts: { pollMs?: number } = {}) {
     return null;
   }, [activePhones, withSecret, query.data]);
 
-  return { paired, isLoading: query.isLoading, error: query.error, refetch: query.refetch };
+  /* An ACTIVE phone exists but none of them belongs to a computer this device can use (the computer
+     signed out and came back with a new key, or the pairing was made on another device): the person
+     has to pair again. Only said once the local secrets have been looked at. */
+  const pairedElsewhere = checked && !query.isLoading && !paired && activePhones.length > 0;
+
+  return { paired, pairedElsewhere, isLoading: query.isLoading, error: query.error, refetch: query.refetch };
 }

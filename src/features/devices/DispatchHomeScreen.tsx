@@ -29,7 +29,7 @@ export function DispatchHomeScreen() {
   const navigation = useNavigation<any>();
   const toast = useToast();
   const email = useAppSelector((st) => st.auth.session?.email);
-  const { paired, isLoading: pairedLoading, error: devicesError, refetch: refetchDevices } = usePairedComputer({ pollMs: 30000 });
+  const { paired, pairedElsewhere, isLoading: pairedLoading, error: devicesError, refetch: refetchDevices } = usePairedComputer({ pollMs: 30000 });
   const threads = useGetDispatchThreadsQuery(undefined, { skip: !paired });
   /* Always fresh on arrival: a thread that just got an answer moves to the top. */
   useFocusEffect(
@@ -66,8 +66,11 @@ export function DispatchHomeScreen() {
             <Icon name="computer" size={36} color={theme.colors.accent} />
           </View>
           <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.display.semibold, fontSize: 22, textAlign: 'center' }}>
-            Set up Dispatch on your computer first
+            {pairedElsewhere ? 'Your phone is paired to another computer' : 'Set up Dispatch on your computer first'}
           </Text>
+          {pairedElsewhere && (
+            <Text style={[styles.introText, { color: theme.colors.textMuted }]}>Pair a phone for this computer.</Text>
+          )}
           <View style={{ gap: 14, alignSelf: 'stretch', paddingHorizontal: 8 }}>
             {[
               'Open the latest AIDraftsMan Desktop app on your computer.',

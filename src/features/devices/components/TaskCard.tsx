@@ -11,9 +11,13 @@ interface Props {
   task: DeviceTask;
   onCancel: () => void;
   cancelling: boolean;
+  /** A desktop answer newer than this task is already in the thread. */
+  answerInThread?: boolean;
 }
 
-export function TaskCard({ task, onCancel, cancelling }: Props) {
+const NOT_SAVED = /answer was not saved/i;
+
+export function TaskCard({ task, onCancel, cancelling, answerInThread = false }: Props) {
   const { theme } = useAppTheme();
   /* Re-evaluate staleness without waiting for the next poll. */
   const [, tick] = useState(0);
@@ -23,8 +27,16 @@ export function TaskCard({ task, onCancel, cancelling }: Props) {
     return () => clearInterval(id);
   }, [task.status]);
 
+  /* The thread is the truth: a late save can leave the task FAILED while the answer IS there. */
+  const savedLate = task.status === 'FAILED' && answerInThread && NOT_SAVED.test(task.message ?? '');
+  const sendAgain =
+    !savedLate &&
+    (task.status === 'EXPIRED' || (task.status === 'FAILED' && (!task.message || /stopped|closed|restart|did not finish/i.test(task.message))));
+
   const tone =
-    task.status === 'DONE'
+    savedLate
+      ? { bg: theme.colors.statusNeutralBg, fg: theme.colors.statusNeutralFg }
+      : task.status === 'DONE'
       ? { bg: theme.colors.statusSuccessBg, fg: theme.colors.statusSuccessFg }
       : task.status === 'FAILED' || task.status === 'EXPIRED'
         ? { bg: theme.colors.statusErrorBg, fg: theme.colors.statusErrorFg }
@@ -36,7 +48,7 @@ export function TaskCard({ task, onCancel, cancelling }: Props) {
   return (
     <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderRadius: theme.radii.xl }]}>
       <View style={[styles.chip, { backgroundColor: tone.bg }]}>
-        <Text style={{ color: tone.fg, fontSize: 12, fontFamily: theme.fontFamilies.body.semibold }}>{taskStatusText(task)}</Text>
+        <Text style={{ color: tone.fg, fontSize: 12, fontFamily: theme.fontFamilies.body.semibold }}>{savedLate ? 'The computer finished. The answer is in the thread.' : taskStatusText(task)}</Text>
       </View>
       {task.status === 'CLAIMED' &&
         steps.map((s, i) => (
@@ -52,8 +64,11 @@ export function TaskCard({ task, onCancel, cancelling }: Props) {
           </View>
         ))}
       {isStaleProgress(task) && (
-        <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>No news from your computer. It may be busy or asleep.</Text>
+        <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>
+          No news from your computer. It may be busy or asleep. If the app on the computer was closed, send it again.
+        </Text>
       )}
+      {sendAgain && <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>The computer stopped. Send it again.</Text>}
       {task.status === 'QUEUED' && <Button label="Cancel" variant="outline" size="sm" onPress={onCancel} loading={cancelling} disabled={cancelling} />}
     </View>
   );
