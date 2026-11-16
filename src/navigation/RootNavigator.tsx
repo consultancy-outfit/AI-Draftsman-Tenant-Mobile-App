@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   DarkTheme,
   DefaultTheme,
@@ -12,8 +12,6 @@ import { selectIsFullyAuthenticated } from '@/store/authSlice';
 import { useAppSelector } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
 
-import { DispatchPushRegistrar } from '@/features/devices/DispatchPushRegistrar';
-import { subscribeToPushTaps } from '@/features/devices/pushNotifications';
 import { ActiveRoutePathContext, getActiveRoutePath } from './activeRoute';
 import { AppNavigator } from './AppNavigator';
 import { AuthNavigator } from './AuthNavigator';
@@ -57,24 +55,6 @@ export function RootNavigator() {
     setActiveRoutePath(getActiveRoutePath(navigationRef.current?.getRootState()));
   }, []);
 
-  /* A tap on a Dispatch notification (also the one that launched the app) opens that thread. */
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    return subscribeToPushTaps((data) => {
-      let tries = 0;
-      const go = () => {
-        const nav = navigationRef.current;
-        if (nav?.isReady()) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (nav as any).navigate('ChatConversationStack', { screen: 'DispatchThread', params: { conversationId: data.conversationId } });
-        } else if (tries++ < 10) {
-          setTimeout(go, 500);
-        }
-      };
-      go();
-    });
-  }, [isAuthenticated]);
-
   const navigationTheme: Theme = {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
@@ -97,14 +77,7 @@ export function RootNavigator() {
         onReady={syncActiveRoutePath}
         onStateChange={syncActiveRoutePath}
       >
-        {isAuthenticated ? (
-          <>
-            <AppNavigator />
-            <DispatchPushRegistrar />
-          </>
-        ) : (
-          <AuthNavigator />
-        )}
+        {isAuthenticated ? <AppNavigator /> : <AuthNavigator />}
       </NavigationContainer>
     </ActiveRoutePathContext.Provider>
   );
