@@ -136,6 +136,7 @@ export async function apiRequest<T>(
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
+    ...(env.isTunnel ? { 'ngrok-skip-browser-warning': 'true' } : null),
     ...options.headers,
   };
 

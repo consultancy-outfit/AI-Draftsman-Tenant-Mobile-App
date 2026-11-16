@@ -1,5 +1,6 @@
 import {
   AGENT_TEAM_PERMISSIONS,
+  CHAT_PERMISSIONS,
   SURVEY_PERMISSIONS,
   BILLING_PERMISSIONS,
   BRANDING_PERMISSIONS,
@@ -104,6 +105,13 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     id: 'run',
     label: 'RUN',
     items: [
+      {
+        route: 'Dispatch',
+        label: 'Dispatch',
+        subtitle: 'Send work to your computer from your phone',
+        icon: 'dispatch',
+        permission: CHAT_PERMISSIONS.SEND,
+      },
       {
         route: 'Customers',
         label: 'Customers',

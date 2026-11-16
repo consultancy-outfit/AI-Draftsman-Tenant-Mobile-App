@@ -20,6 +20,8 @@ interface ThreadCardProps {
    * money the figure is absent from the response entirely, and the row must
    * omit the slot rather than render a zero. */
   canViewCost: boolean;
+  /** Shown when the thread has no agent (default: an em dash). */
+  noAgentLabel?: string;
   /** Selection mode is explicit here rather than hover-revealed. */
   selectable: boolean;
   selected: boolean;
@@ -41,6 +43,7 @@ export function ThreadCard({
   onPress,
   onLongPress,
   canViewCost,
+  noAgentLabel = '—',
   selectable,
   selected,
   onToggleSelect,
@@ -56,7 +59,7 @@ export function ThreadCard({
   // rather than only discovering it at the composer.
   const isTeam = isTeamThread(thread);
   const meta = [
-    isTeam ? thread.agentTeamName || 'Team' : thread.agentId ? agentDisplayName(thread.agentName) : '—',
+    isTeam ? thread.agentTeamName || 'Team' : thread.agentId ? agentDisplayName(thread.agentName) : noAgentLabel,
     formatRelativeTime(thread.lastActivityAt),
   ].join(' · ');
 

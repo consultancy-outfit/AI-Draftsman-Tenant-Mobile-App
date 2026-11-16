@@ -4,6 +4,10 @@ import { ChatConversationScreen } from '@/features/chat/ChatConversationScreen';
 import { ChatThreadDetailsScreen } from '@/features/chat/ChatThreadDetailsScreen';
 import { ChatThreadSearchScreen } from '@/features/chat/ChatThreadSearchScreen';
 
+import { DeviceArtifactScreen } from '@/features/devices/DeviceArtifactScreen';
+import { DispatchThreadScreen } from '@/features/devices/DispatchThreadScreen';
+import { PairComputerScreen } from '@/features/devices/PairComputerScreen';
+
 import type { ChatConversationStackParamList } from '../types';
 
 const Stack = createNativeStackNavigator<ChatConversationStackParamList>();
@@ -21,6 +25,9 @@ export function ChatConversationStack() {
       <Stack.Screen name="ChatConversation" component={ChatConversationScreen} />
       <Stack.Screen name="ChatThreadDetails" component={ChatThreadDetailsScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="ChatThreadSearch" component={ChatThreadSearchScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="PairComputer" component={PairComputerScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="DispatchThread" component={DispatchThreadScreen} />
+      <Stack.Screen name="DeviceArtifact" component={DeviceArtifactScreen} />
     </Stack.Navigator>
   );
 }

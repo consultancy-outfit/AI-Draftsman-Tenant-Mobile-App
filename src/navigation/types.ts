@@ -53,6 +53,10 @@ export type KnowledgeBasesStackParamList = {
   KnowledgeBaseUpload: { id: string };
 };
 
+export type DispatchStackParamList = {
+  DispatchHome: undefined;
+};
+
 export type ChatStackParamList = {
   /** `newTeamThread` arrives from Agents Teams ("New team chat", or a
    * builder team's "Chat"): open on the Teams tab with the New thread form
@@ -78,6 +82,12 @@ export type ChatConversationStackParamList = {
    * A pushed screen here rather than a third column. */
   ChatThreadDetails: { conversationId: string };
   ChatThreadSearch: undefined;
+  /** Dispatch: scan the desktop's QR to pair this phone. */
+  PairComputer: undefined;
+  /** A Dispatch thread: work is sent to the computer from here. */
+  DispatchThread: { conversationId: string; title?: string };
+  /** A text file the computer published to this phone. */
+  DeviceArtifact: { artifactId: string; computerKeyId: string };
 };
 
 export type CustomersStackParamList = {
@@ -270,6 +280,8 @@ export type AppDrawerParamList = {
   UsageSpend: undefined;
   Surveys: NavigatorScreenParams<SurveysStackParamList> | undefined;
   MySurveys: NavigatorScreenParams<MySurveysStackParamList> | undefined;
+  /** Send work to the paired computer (sidebar, RUN). */
+  Dispatch: NavigatorScreenParams<DispatchStackParamList> | undefined;
   /**
    * `from` is the drawer route that opened the bell, so Back returns to that
    * screen rather than wherever the drawer's own history happens to point.
