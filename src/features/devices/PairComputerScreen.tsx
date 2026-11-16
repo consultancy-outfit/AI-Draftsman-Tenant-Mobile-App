@@ -113,6 +113,13 @@ export function PairComputerScreen() {
     setPhase({ name: 'scan' });
   };
 
+  /* This screen stays mounted in its stack after leaving it: without a reset, reopening it shows
+     the old "Paired"/error result (whose Done just goes back) instead of a fresh scanner. */
+  useEffect(() => {
+    if (!isFocused && (phase.name === 'done' || phase.name === 'error')) retry();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused, phase.name]);
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title="Pair your computer" mode="stack" onBack={() => goBack()} />
