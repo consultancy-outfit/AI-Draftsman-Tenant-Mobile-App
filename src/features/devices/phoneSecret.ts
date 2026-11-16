@@ -38,19 +38,28 @@ export async function hashPhoneSecret(secret: string): Promise<string> {
   return hex.toLowerCase();
 }
 
+/* In-memory copy for this app session only (never persisted). It keeps a phone that was
+   just paired working even when the device's secure store cannot read back what it wrote
+   (some emulators / broken keystores); across a restart the secure store is still the source. */
+const sessionSecrets = new Map<string, string>();
+
 export async function savePhoneSecret(computerKeyId: string, secret: string): Promise<void> {
+  sessionSecrets.set(keyFor(computerKeyId), secret);
   await SecureStore.setItemAsync(keyFor(computerKeyId), secret);
 }
 
 export async function loadPhoneSecret(computerKeyId: string): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(keyFor(computerKeyId));
+    const stored = await SecureStore.getItemAsync(keyFor(computerKeyId));
+    if (stored) return stored;
   } catch {
-    return null;
+    /* fall through to the session copy */
   }
+  return sessionSecrets.get(keyFor(computerKeyId)) ?? null;
 }
 
 export async function forgetPhoneSecret(computerKeyId: string): Promise<void> {
+  sessionSecrets.delete(keyFor(computerKeyId));
   try {
     await SecureStore.deleteItemAsync(keyFor(computerKeyId));
   } catch {
