@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
-import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,6 +67,18 @@ export function DispatchThreadScreen() {
 function DispatchThread() {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
+  /* The app is edge-to-edge, so Android's own adjustResize no longer lifts the composer above the
+     keyboard: the keyboard-avoiding padding does it, and the bottom safe-area inset (the nav bar)
+     must not be added on top while the keyboard covers it. */
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Rt>();
   const toast = useToast();
@@ -297,7 +309,7 @@ function DispatchThread() {
   ) : null;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background }} behavior="padding">
       <AppHeader title={title} mode="stack" onBack={goBack} />
 
       <View style={styles.subHeader}>
@@ -349,7 +361,7 @@ function DispatchThread() {
         />
       )}
 
-      <View style={[styles.composer, { borderColor: theme.colors.border, paddingBottom: insets.bottom + 8 }]}>
+      <View style={[styles.composer, { borderColor: theme.colors.border, paddingBottom: (keyboardOpen ? 0 : insets.bottom) + 8 }]}>
         <TouchableOpacity onPress={() => setFolderOpen((v) => !v)} style={styles.folderToggle} accessibilityRole="button" accessibilityState={{ expanded: folderOpen }}>
           <Icon name="folder-open" size={16} color={theme.colors.accent} />
           <Text numberOfLines={1} style={{ color: theme.colors.accent, fontSize: 12, flex: 1 }}>
