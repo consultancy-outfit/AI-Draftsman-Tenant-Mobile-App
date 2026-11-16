@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
 import { DrawerActions, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,6 +15,7 @@ import { useAppTheme } from '@/theme/ThemeContext';
 import { NewDispatchThreadSheet } from './components/NewDispatchThreadSheet';
 import { useDeleteDispatchThreadMutation, useGetDispatchThreadsQuery, useRenameDispatchThreadMutation } from './devicesApi';
 import { PRESENCE_LABEL, SCOPE_LABEL, computerPresence, isRemoteControlOff } from './devicesRules';
+import { useKeyboardOpen } from './useKeyboardOpen';
 import { usePairedComputer } from './usePairedComputer';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- cross-navigator jump (see ChatScreen)
@@ -28,6 +29,7 @@ export function DispatchHomeScreen() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const navigation = useNavigation<any>();
   const toast = useToast();
+  const keyboardOpen = useKeyboardOpen();
   const email = useAppSelector((st) => st.auth.session?.email);
   const { paired, pairedElsewhere, isLoading: pairedLoading, error: devicesError, refetch: refetchDevices } = usePairedComputer({ pollMs: 30000 });
   const threads = useGetDispatchThreadsQuery(undefined, { skip: !paired });
@@ -75,7 +77,7 @@ export function DispatchHomeScreen() {
             {[
               'Open the latest AIDraftsMan Desktop app on your computer.',
               email ? `Sign in as ${email}.` : 'Sign in with the same account as on this phone.',
-              'Go to Computer › Pair a phone. A QR code appears.',
+              'Open the Device menu and choose Pair a phone. A QR code appears.',
             ].map((t, i) => (
               <View key={i} style={styles.step}>
                 <View style={[styles.stepNo, { backgroundColor: theme.colors.statusInfoBg }]}>
@@ -86,12 +88,12 @@ export function DispatchHomeScreen() {
             ))}
           </View>
           <Text style={[styles.introText, { color: theme.colors.textMuted }]}>
-            Then tap Done and scan the code. Your phone pairs as soon as the computer confirms.
+            Then tap Scan the code and point the camera at it. Your phone pairs as soon as the computer confirms.
           </Text>
           {remoteOff && (
             <Text style={[styles.introText, { color: theme.colors.statusErrorFg }]}>Remote control is switched off for this workspace.</Text>
           )}
-          <Button label="Done" onPress={() => toRoot(navigation, 'PairComputer')} fullWidth />
+          <Button label="Scan the code" onPress={() => toRoot(navigation, 'PairComputer')} fullWidth />
         </ScrollView>
       </View>
     );
@@ -215,8 +217,8 @@ export function DispatchHomeScreen() {
       </Modal>
 
       <Modal visible={!!renaming} transparent animationType="fade" onRequestClose={() => setRenaming(null)}>
-        <View style={styles.scrim}>
-          <View style={[styles.sheet, { backgroundColor: theme.colors.surface, paddingBottom: insets.bottom + 16, gap: 10 }]}>
+        <KeyboardAvoidingView style={styles.scrim} behavior="padding">
+          <View style={[styles.sheet, { backgroundColor: theme.colors.surface, paddingBottom: (keyboardOpen ? 0 : insets.bottom) + 16, gap: 10 }]}>
             <Text style={{ color: theme.colors.text, fontSize: 17, fontFamily: theme.fontFamilies.display.semibold }}>Rename thread</Text>
             <TextInput
               value={renameValue}
@@ -238,7 +240,7 @@ export function DispatchHomeScreen() {
               />
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
