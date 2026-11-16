@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { KeyboardAvoidingView, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, useToast } from '@/components/ui';
 import { useGetAvailableAgentsForChatQuery } from '@/features/chat/chatApi';
 import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
 
 import { useCreateDispatchThreadMutation } from '../devicesApi';
 
@@ -19,6 +20,7 @@ interface Props {
 export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
   const { height } = useWindowDimensions();
   const toast = useToast();
   const [title, setTitle] = useState('');
@@ -58,11 +60,11 @@ export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
-      <View style={styles.scrim}>
+      <KeyboardAvoidingView style={[styles.scrim, { paddingTop: insets.top }]} behavior="padding">
         <View
           style={[
             styles.sheet,
-            { backgroundColor: theme.colors.surface, paddingBottom: insets.bottom + 16, borderTopLeftRadius: theme.radii.sheetTop, borderTopRightRadius: theme.radii.sheetTop },
+            { backgroundColor: theme.colors.surface, paddingBottom: (keyboardOpen ? 0 : insets.bottom) + 16, borderTopLeftRadius: theme.radii.sheetTop, borderTopRightRadius: theme.radii.sheetTop },
           ]}
         >
           <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.display.semibold, fontSize: theme.fontSizes.lg }}>New Dispatch thread</Text>
@@ -75,7 +77,7 @@ export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
             style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}
           />
           <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Who does the work</Text>
-          <ScrollView style={{ maxHeight: height * 0.42 }} contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled">
+          <ScrollView style={{ maxHeight: height * (keyboardOpen ? 0.2 : 0.42) }} contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled">
             <Option id={null} label="Default model" hint="The workspace's default" />
             {deployed.map((a) => (
               <Option key={a.id} id={a.id} label={a.name} hint="Agent" />
@@ -86,7 +88,7 @@ export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
             <Button label="Create thread" onPress={() => void submit()} loading={isLoading} />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

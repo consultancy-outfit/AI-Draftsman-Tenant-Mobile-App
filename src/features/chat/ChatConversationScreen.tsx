@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as Clipboard from 'expo-clipboard';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
 import type { ChatConversationStackParamList } from '@/navigation/types';
 import { newIdempotencyKey } from '@/utils/ids';
+import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
 
 import type { ChatMessage } from './chat.types';
 import {
@@ -60,6 +61,7 @@ type Rt = RouteProp<ChatConversationStackParamList, 'ChatConversation'>;
 export function ChatConversationScreen() {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Rt>();
   const toast = useToast();
@@ -253,13 +255,10 @@ export function ChatConversationScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      // Android's own `windowSoftInputMode="adjustResize"` (the RN default)
-      // already shrinks the window when the keyboard opens, so a second,
-      // JS-driven resize here would double-apply the same shift. iOS has no
-      // such OS-level behavior — the padding behavior IS what pushes the
-      // composer above the keyboard there, which is the only place this
-      // screen was missing it.
+      // The app is edge-to-edge, so Android's `adjustResize` no longer shrinks the window for the
+      // keyboard: the padding behaviour lifts the composer above it on both platforms (and the bottom
+      // safe-area spacer below is dropped while the keyboard covers the navigation bar).
+      behavior="padding"
     >
       <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
 
@@ -408,7 +407,7 @@ export function ChatConversationScreen() {
         onRemoveAttachment={attachments.remove}
         onRetryAttachment={attachments.retry}
       />
-      <View style={{ height: insets.bottom }} />
+      <View style={{ height: keyboardOpen ? 0 : insets.bottom }} />
     </KeyboardAvoidingView>
   );
 }

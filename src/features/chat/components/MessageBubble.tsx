@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { Icon } from '@/components/ui';
+import { Icon, MarkdownText } from '@/components/ui';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { formatMoneyCents } from '@/utils/format';
 
@@ -28,6 +28,11 @@ interface MessageBubbleProps {
   /** On a team thread: which specialist wrote this reply. Shown above the
    * bubble — on a one-agent thread every reply is the same agent's. */
   authorName?: string | null;
+  /** Render the body as markdown (bold, lists, code, tables…). Off by default so the normal chat
+   * keeps its plain-text bubbles; Dispatch turns it on for the desktop agent's replies. */
+  markdown?: boolean;
+  /** Show the time the message was sent (e.g. "11:29 AM") in the row under the bubble. */
+  timeLabel?: string;
 }
 
 /**
@@ -52,6 +57,8 @@ export function MessageBubble({
   onRetry,
   onCopy,
   authorName = null,
+  markdown = false,
+  timeLabel = '',
 }: MessageBubbleProps) {
   const { theme } = useAppTheme();
   const isUser = message.role === 'USER';
@@ -90,7 +97,11 @@ export function MessageBubble({
               },
         ]}
       >
-        {message.body.length > 0 && (
+        {message.body.length > 0 && markdown && (
+          <MarkdownText content={message.body} color={isUser ? theme.colors.textOnAccent : theme.colors.text} />
+        )}
+
+        {message.body.length > 0 && !markdown && (
           <Text
             style={{
               color: isUser ? theme.colors.textOnAccent : theme.colors.text,
@@ -170,6 +181,10 @@ export function MessageBubble({
             {formatMoneyCents(message.costCents)}
           </Text>
         )}
+
+        {timeLabel ? (
+          <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: 11 }}>{timeLabel}</Text>
+        ) : null}
       </View>
 
       {isFailed && (

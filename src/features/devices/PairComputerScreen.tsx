@@ -130,13 +130,13 @@ export function PairComputerScreen() {
           ) : !permission.granted ? (
             <View style={styles.center}>
               <Text style={[styles.text, { color: theme.colors.text }]}>
-                Allow the camera to scan the code on your computer (Computer › Pair a phone).
+                Allow the camera to scan the code on your computer (Device › Pair a phone).
               </Text>
               <Button label="Allow camera" onPress={() => void requestPermission()} style={styles.self} />
             </View>
           ) : (
             <>
-              <Text style={[styles.text, { color: theme.colors.text }]}>On your computer open Computer › Pair a phone, then scan the code. It is valid for 2 minutes.</Text>
+              <Text style={[styles.text, { color: theme.colors.text }]}>On your computer open Device › Pair a phone, then scan the code. It is valid for 2 minutes.</Text>
               <CameraView
                 style={styles.camera}
                 facing="back"
