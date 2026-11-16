@@ -11,11 +11,11 @@ import { threadDisplayName } from '@/features/chat/chatRules';
 import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppSelector } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
 
 import { NewDispatchThreadSheet } from './components/NewDispatchThreadSheet';
 import { useDeleteDispatchThreadMutation, useGetDispatchThreadsQuery, useRenameDispatchThreadMutation } from './devicesApi';
 import { PRESENCE_LABEL, SCOPE_LABEL, computerPresence, isRemoteControlOff } from './devicesRules';
-import { useKeyboardOpen } from './useKeyboardOpen';
 import { usePairedComputer } from './usePairedComputer';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- cross-navigator jump (see ChatScreen)

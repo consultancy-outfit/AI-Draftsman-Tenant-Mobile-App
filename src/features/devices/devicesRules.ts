@@ -97,3 +97,44 @@ export function getDesktopRun(richContent: unknown): DesktopRun | null {
 }
 
 export const DISPATCH_FOLDER_KEY = (conversationId: string) => `dispatch.folder.${conversationId}`;
+
+/* ---- Transcript timestamps (same look as the desktop app: "11:29 AM", "Today") ---- */
+
+const validDate = (iso: string): Date | null => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+export function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/** "11:29 AM" in the phone's own time zone; '' when the date is unreadable. */
+export function messageTimeLabel(iso: string): string {
+  const d = validDate(iso);
+  return d ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+}
+
+/** "Today", "Yesterday", "Mon, 26 Oct" (with the year when it is not this year). */
+export function messageDayLabel(iso: string, now: Date = new Date()): string {
+  const d = validDate(iso);
+  if (!d) return '';
+  if (isSameDay(d, now)) return 'Today';
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (isSameDay(d, yesterday)) return 'Yesterday';
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    ...(d.getFullYear() === now.getFullYear() ? null : { year: 'numeric' as const }),
+  });
+}
+
+/** Does this message start a new day, compared with the message just before it in time? */
+export function startsNewDay(iso: string, olderIso: string | null | undefined): boolean {
+  const d = validDate(iso);
+  if (!d) return false;
+  const older = olderIso ? validDate(olderIso) : null;
+  return !older || !isSameDay(d, older);
+}

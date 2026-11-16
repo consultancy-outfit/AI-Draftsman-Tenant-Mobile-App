@@ -6,9 +6,9 @@ import { Button, Icon, useToast } from '@/components/ui';
 import { useGetAvailableAgentsForChatQuery } from '@/features/chat/chatApi';
 import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
 
 import { useCreateDispatchThreadMutation } from '../devicesApi';
-import { useKeyboardOpen } from '../useKeyboardOpen';
 
 interface Props {
   visible: boolean;

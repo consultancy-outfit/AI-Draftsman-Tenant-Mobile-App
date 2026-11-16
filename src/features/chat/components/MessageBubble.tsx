@@ -31,6 +31,8 @@ interface MessageBubbleProps {
   /** Render the body as markdown (bold, lists, code, tables…). Off by default so the normal chat
    * keeps its plain-text bubbles; Dispatch turns it on for the desktop agent's replies. */
   markdown?: boolean;
+  /** Show the time the message was sent (e.g. "11:29 AM") in the row under the bubble. */
+  timeLabel?: string;
 }
 
 /**
@@ -56,6 +58,7 @@ export function MessageBubble({
   onCopy,
   authorName = null,
   markdown = false,
+  timeLabel = '',
 }: MessageBubbleProps) {
   const { theme } = useAppTheme();
   const isUser = message.role === 'USER';
@@ -178,6 +181,10 @@ export function MessageBubble({
             {formatMoneyCents(message.costCents)}
           </Text>
         )}
+
+        {timeLabel ? (
+          <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: 11 }}>{timeLabel}</Text>
+        ) : null}
       </View>
 
       {isFailed && (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import { getErrorMessage } from '@/services/apiErrorMessage';
 import { api } from '@/store/api';
 import { useAppDispatch } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
 
 import { ApprovalCard } from './components/ApprovalCard';
 import { DesktopRunHeader, NoStepsWarning, isNoStepsRun } from './components/DesktopRunHeader';
@@ -42,6 +43,9 @@ import {
   isActiveTask,
   isFolderNotAllowed,
   isRemoteControlOff,
+  messageDayLabel,
+  messageTimeLabel,
+  startsNewDay,
 } from './devicesRules';
 import { useBackToDispatch } from './useBackToDispatch';
 import { usePairedComputer } from './usePairedComputer';
@@ -67,18 +71,8 @@ export function DispatchThreadScreen() {
 function DispatchThread() {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
-  /* The app is edge-to-edge, so Android's own adjustResize no longer lifts the composer above the
-     keyboard: the keyboard-avoiding padding does it, and the bottom safe-area inset (the nav bar)
-     must not be added on top while the keyboard covers it. */
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
-  useEffect(() => {
-    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardOpen(true));
-    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardOpen(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
+  /* Edge-to-edge: the keyboard-avoiding padding lifts the composer, so drop the bottom inset while it is open. */
+  const keyboardOpen = useKeyboardOpen();
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Rt>();
   const toast = useToast();
@@ -261,12 +255,16 @@ function DispatchThread() {
         ? { text: 'Your computer looks offline. Work you send waits until it is on and signed in.' }
         : null;
 
-  const renderMessage = (m: ChatMessage) => {
+  /* `older` is the message just before this one in time (the list is newest-first). A day label goes
+     above the first message of each day, and above the very first message of the thread. */
+  const renderMessage = (m: ChatMessage, older: ChatMessage | undefined) => {
     const run = m.providerServed === 'desktop' ? getDesktopRun(m.richContent) : null;
+    const showDay = older ? startsNewDay(m.createdAt, older.createdAt) : !hasEarlier;
     return (
       <View key={m.id}>
+        {showDay ? <DayLabel text={messageDayLabel(m.createdAt)} /> : null}
         {run ? <DesktopRunHeader run={run} /> : null}
-        <MessageBubble message={m} isOwnTurn={false} canViewCost={false} onRetry={() => undefined} onCopy={handleCopy} markdown />
+        <MessageBubble message={m} isOwnTurn={false} canViewCost={false} onRetry={() => undefined} onCopy={handleCopy} markdown timeLabel={messageTimeLabel(m.createdAt)} />
         {isNoStepsRun(run) ? <NoStepsWarning /> : null}
       </View>
     );
@@ -357,7 +355,7 @@ function DispatchThread() {
               </TouchableOpacity>
             ) : null
           }
-          renderItem={({ item }) => renderMessage(item)}
+          renderItem={({ item, index }) => renderMessage(item, items[index + 1])}
         />
       )}
 
@@ -413,7 +411,21 @@ function DispatchThread() {
   );
 }
 
+function DayLabel({ text }: { text: string }) {
+  const { theme } = useAppTheme();
+  if (!text) return null;
+  return (
+    <View style={styles.dayRow} accessibilityRole="header">
+      <View style={[styles.dayChip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>{text}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  dayRow: { alignItems: 'center', marginVertical: 8 },
+  dayChip: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4 },
   subHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingBottom: 6 },
   notice: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
   emptyScroll: { flexGrow: 1, justifyContent: 'center', padding: 16 },
