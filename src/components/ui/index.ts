@@ -5,6 +5,7 @@ export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { Icon, NAV_ICON_MAP, type IconName, type NavIconKey } from './Icon';
 export { Loader } from './Loader';
+export { MarkdownText } from './MarkdownText';
 export { MultiSelectField } from './MultiSelectField';
 export { OtpInput } from './OtpInput';
 export { PickerField, type PickerOption } from './PickerField';

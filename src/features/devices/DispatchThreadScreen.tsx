@@ -266,7 +266,7 @@ function DispatchThread() {
     return (
       <View key={m.id}>
         {run ? <DesktopRunHeader run={run} /> : null}
-        <MessageBubble message={m} isOwnTurn={false} canViewCost={false} onRetry={() => undefined} onCopy={handleCopy} />
+        <MessageBubble message={m} isOwnTurn={false} canViewCost={false} onRetry={() => undefined} onCopy={handleCopy} markdown />
         {isNoStepsRun(run) ? <NoStepsWarning /> : null}
       </View>
     );
