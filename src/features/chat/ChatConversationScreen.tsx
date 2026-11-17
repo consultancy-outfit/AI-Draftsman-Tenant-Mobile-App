@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import * as Clipboard from 'expo-clipboard';
-import { FlatList, KeyboardAvoidingView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { useAppTheme } from '@/theme/ThemeContext';
 import type { ChatConversationStackParamList } from '@/navigation/types';
 import { newIdempotencyKey } from '@/utils/ids';
 import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
+import { KeyboardLift } from '@/utils/KeyboardLift';
 
 import type { ChatMessage } from './chat.types';
 import {
@@ -253,12 +254,12 @@ export function ChatConversationScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <KeyboardLift
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       // The app is edge-to-edge, so Android's `adjustResize` no longer shrinks the window for the
       // keyboard: the padding behaviour lifts the composer above it on both platforms (and the bottom
       // safe-area spacer below is dropped while the keyboard covers the navigation bar).
-      behavior="padding"
+     
     >
       <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
 
@@ -408,7 +409,7 @@ export function ChatConversationScreen() {
         onRetryAttachment={attachments.retry}
       />
       <View style={{ height: keyboardOpen ? 0 : insets.bottom }} />
-    </KeyboardAvoidingView>
+    </KeyboardLift>
   );
 }
 
