@@ -30,6 +30,13 @@ export const PLAYGROUND_PERMISSIONS = {
 /** Mirrors web's `AGENT_TEAM_PERMISSIONS` (store/api/permissionCatalogue.ts),
  * itself the backend's. `run`, `approve`, `cancel` and `trace` belong to a
  * team RUN, which is driven from inside a chat thread. */
+/** Mirrors web's `LEARNING_PERMISSIONS`: `learning.use` gates the AI Learning
+ * module (feed, shorts, courses, my progress). The backend seeds it to every
+ * system role and guards every `/learning/ai/*` route with it. */
+export const LEARNING_PERMISSIONS = {
+  USE: 'learning.use',
+} as const;
+
 /** Mirrors web's `SURVEY_PERMISSIONS`: MANAGE gates the manager's Surveys
  * module; RESPOND (seeded to every tenant user) gates My Surveys. */
 export const SURVEY_PERMISSIONS = {
