@@ -223,6 +223,11 @@ export const clampConfidence = (value: unknown): number | null => {
 /** `details.code` (or the top-level `code`) off an RTK Query rejection. */
 export const learningErrorCode = (error: unknown): string | null => {
   if (!error || typeof error !== 'object') return null;
+  /* Mobile: ApiQueryError carries `code` and `details` on the error itself. */
+  const own = error as { code?: unknown; details?: { code?: unknown } | null };
+  if (typeof own.code === 'string') return own.code;
+  if (own.details && typeof own.details === 'object' && typeof own.details.code === 'string') return own.details.code;
+  /* Web: the code sits under `data`. */
   const data = (error as { data?: unknown }).data;
   if (!data || typeof data !== 'object') return null;
   const d = data as { code?: unknown; details?: { code?: unknown } | null };

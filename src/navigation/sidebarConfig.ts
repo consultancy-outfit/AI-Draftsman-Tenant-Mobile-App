@@ -177,6 +177,20 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
     label: 'LEARN',
     items: [
       {
+        route: 'Apprenticeships',
+        label: 'Apprenticeship Marketplace',
+        subtitle: 'Browse published apprenticeships and enrol',
+        icon: 'apprenticeships',
+        permission: LEARNING_PERMISSIONS.USE,
+      },
+      {
+        route: 'MyLearning',
+        label: 'My Learning',
+        subtitle: 'Your enrolments, progress and AI tutor sessions',
+        icon: 'myLearning',
+        permission: LEARNING_PERMISSIONS.USE,
+      },
+      {
         route: 'AiLearning',
         label: 'AI Learning',
         subtitle: 'AI news, shorts, courses and your progress',

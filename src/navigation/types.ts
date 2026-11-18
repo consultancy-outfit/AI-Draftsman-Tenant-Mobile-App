@@ -280,6 +280,17 @@ export type AiLearningStackParamList = {
   AiQuiz: { quizId: string; title?: string };
 };
 
+/** Apprenticeship Marketplace and My Learning (sidebar, LEARN). Both drawer entries mount this same set of
+ * screens (they differ only in the first one shown), so Enrol / Resume stays inside the entry you are in. */
+export type LearningStackParamList = {
+  ApprenticeshipsHome: undefined;
+  ApprenticeshipDetail: { id: string; title?: string };
+  MyLearningHome: undefined;
+  LearningWorkspace: { enrollmentId: string; title?: string; tab?: 'plan' | 'items' | 'tutor'; focusCode?: string };
+  /** One KSB item of an enrolment: assessed state, self-confidence, assessments, evidence. */
+  CompetencyDetail: { enrollmentId: string; code: string; statement?: string; readOnly?: boolean };
+};
+
 export type AppDrawerParamList = {
   /* Optionally jumps straight to a tab (e.g. the sidebar's own "Dashboard"
      row) — undefined lands on whichever tab react-navigation already has
@@ -298,6 +309,8 @@ export type AppDrawerParamList = {
   Surveys: NavigatorScreenParams<SurveysStackParamList> | undefined;
   MySurveys: NavigatorScreenParams<MySurveysStackParamList> | undefined;
   AiLearning: NavigatorScreenParams<AiLearningStackParamList> | undefined;
+  Apprenticeships: NavigatorScreenParams<LearningStackParamList> | undefined;
+  MyLearning: NavigatorScreenParams<LearningStackParamList> | undefined;
   /** Send work to the paired computer (sidebar, RUN). */
   Dispatch: NavigatorScreenParams<DispatchStackParamList> | undefined;
   /**
