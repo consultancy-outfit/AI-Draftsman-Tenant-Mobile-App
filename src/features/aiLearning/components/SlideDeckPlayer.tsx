@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, useToast } from '@/components/ui';
 
+import { DeckBackground, SegmentFill } from './DeckBackground';
+
 import type { ViewMilestone, ViewMilestoneTracker } from '../aiLearning.logic';
 import { useLazyGetAiUpdateQuery } from '../aiLearningApi';
 import type { AiShortDeck, AiShortSummary, AiSlide } from '../aiLearning.types';
@@ -205,19 +207,23 @@ export function SlideDeckPlayer({ short, current, tracker, onMilestone, onOpenUp
 
   return (
     <View
-      style={[styles.root, { backgroundColor: '#14110F' }]}
+      style={[styles.root, { backgroundColor: '#000' }]}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchCancel}
     >
+      <DeckBackground accent={accent} />
+
       <View style={styles.segments}>
         {slides.map((s, i) => {
           const fill = segmentFill(i, index, elapsed / slideDuration(s));
           return (
             <View key={s.id} style={styles.segment}>
-              <View style={{ width: `${fill * 100}%`, height: '100%', backgroundColor: '#fff' }} />
+              <View style={{ width: `${fill * 100}%`, height: '100%', overflow: 'hidden' }}>
+                <SegmentFill accent={accent} />
+              </View>
             </View>
           );
         })}

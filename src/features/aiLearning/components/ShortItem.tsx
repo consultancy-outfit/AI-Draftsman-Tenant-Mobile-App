@@ -67,7 +67,7 @@ export function ShortItem({ short, height, mounted, current, tracker, onMileston
 
 const styles = StyleSheet.create({
   root: { width: '100%', overflow: 'hidden' },
-  poster: { ...StyleSheet.absoluteFillObject, backgroundColor: '#14110F' },
+  poster: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000' },
   caption: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16, gap: 4, backgroundColor: 'rgba(0,0,0,0.45)' },
   providerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
