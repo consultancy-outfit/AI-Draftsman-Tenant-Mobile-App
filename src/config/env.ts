@@ -17,7 +17,7 @@ const appEnv: AppEnv =
  * Set to `null` to go back to the hosted API in development.
  */
 const DEV_TUNNEL_API_BASE_URL: string | null =
-  'https://dev-api.aidraftsman.ai/api/v1';
+  null;
 
 const API_BASE_URLS: Record<AppEnv, string> = {
   development: DEV_TUNNEL_API_BASE_URL ?? 'https://be-api.aidraftsman.ai/api/v1',
