@@ -163,6 +163,11 @@ export type MarketplaceStackParamList = {
   MarketplaceEntryDetail: { resource: 'skill' | 'agent'; id: string };
   OwnedSkillDetail: { catalogueId: string };
   AddSkill: undefined;
+  /** An Agent Team template from the marketplace, and installing it. */
+  MarketplaceTeamDetail: { id: string };
+  TeamInstall: { id: string };
+  /** After install: Schedule, then Connectors (both optional). */
+  TeamInstallWizard: { teamId: string; teamName: string; defaultObjective: string | null; requiredConnectorSlugs: string[] };
   /* Reuses Company Agents' own detail/edit/clone-out screens in place, the
      same way web's OwnedAgentsPanel reuses those dialogs rather than
      navigating away — opening, editing, or cloning out an agent from the

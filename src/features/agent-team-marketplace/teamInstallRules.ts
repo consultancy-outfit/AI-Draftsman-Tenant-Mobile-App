@@ -30,18 +30,21 @@ const readMessage = (raw: unknown): string => {
  * would be the wrong answer to a conflict it does not understand.
  */
 export const readTeamCloneFailure = (error: unknown): TeamCloneFailure => {
-  const raw = (error ?? {}) as { status?: unknown; data?: unknown };
+  /* Web's RTK error is `{ status, data: { code, message } }`; this app's base query flattens it to
+     `{ status, code, messages }`. Both are read, so the rule is the same on either. */
+  const raw = (error ?? {}) as { status?: unknown; data?: unknown; code?: unknown; messages?: unknown };
   const status = typeof raw.status === 'number' ? raw.status : null;
   const body = (raw.data && typeof raw.data === 'object' ? raw.data : {}) as {
     code?: unknown;
     message?: unknown;
   };
-  const message = readMessage(body.message);
+  const code = body.code ?? raw.code;
+  const message = readMessage(body.message) || readMessage(raw.messages);
   let fallback = 'Could not install that team. Try again.';
   if (status === null) fallback = 'Could not reach the marketplace. Try again.';
   return {
     status,
-    nameTaken: status === 409 && body.code === TEAM_NAME_TAKEN,
+    nameTaken: status === 409 && code === TEAM_NAME_TAKEN,
     message: message || fallback,
   };
 };

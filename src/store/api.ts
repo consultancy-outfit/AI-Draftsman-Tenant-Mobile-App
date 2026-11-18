@@ -92,6 +92,14 @@ export const api = createApi({
     'AiLesson',
     'AiQuiz',
     'AiProgress',
+    /* Agent Teams marketplace templates, keyed by id plus `LIST`. */
+    'MarketplaceTeam',
+    /* Apprenticeship learning (/learning/*): catalogue, enrolments, plan, competencies, tutor. */
+    'Apprenticeship',
+    'Enrollment',
+    'LearningPlan',
+    'Competency',
+    'TutorSession',
   ],
   endpoints: () => ({}),
 });
