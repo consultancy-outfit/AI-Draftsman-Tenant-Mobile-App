@@ -40,6 +40,11 @@ export const NAV_ICON_MAP = {
   agentTeams: 'account-tree',
   surveys: 'poll',
   mySurveys: 'assignment',
+  /* Web's PsychologyRounded — AI Learning. */
+  aiLearning: 'psychology',
+  /* Web's learningMarketplace / myLearning rows. */
+  apprenticeships: 'storefront',
+  myLearning: 'school',
   dispatch: 'computer',
   customers: 'business',
   leads: 'trending-up',

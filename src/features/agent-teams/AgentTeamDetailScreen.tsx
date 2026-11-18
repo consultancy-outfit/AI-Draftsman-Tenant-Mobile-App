@@ -18,12 +18,15 @@ import {
   useDeleteAgentTeamScheduleMutation,
   useGetAgentTeamQuery,
   useGetAgentTeamSchedulesQuery,
+  useGetAssignableUsersQuery,
   useRemoveAgentTeamMemberMutation,
   useRunAgentTeamScheduleNowMutation,
   useUpdateAgentTeamMemberMutation,
   useUpdateAgentTeamScheduleMutation,
 } from './agentTeamsApi';
-import { MEMBER_COPY, SCHEDULE_COPY, detailChatLabel, hierarchyRows, teamChatTarget, toAgentTeamRow } from './agentTeamsRules';
+import { MEMBER_COPY, SCHEDULE_COPY, chatBlockedReason, detailChatLabel, hierarchyRows, teamChatTarget, toAgentTeamRow } from './agentTeamsRules';
+import { NotReadyBanner } from './components/NotReadyBanner';
+import { ACCESS_MODE_COPY, ACCESS_ROLE_COPY } from './teamAccessRules';
 import { MemberCard } from './components/MemberCard';
 import { ScheduleCard } from './components/ScheduleCard';
 import { ReportingLine } from './components/ReportingLine';
@@ -33,7 +36,7 @@ import { openNewTeamChat, openTeamConversation } from './openTeamConversation';
 
 type Nav = NativeStackNavigationProp<AgentTeamsStackParamList>;
 type Rt = RouteProp<AgentTeamsStackParamList, 'AgentTeamDetail'>;
-type Tab = 'members' | 'schedules';
+type Tab = 'members' | 'schedules' | 'access';
 
 
 /**
@@ -50,8 +53,8 @@ export function AgentTeamDetailScreen() {
   const { params } = useRoute<Rt>();
   const toast = useToast();
 
-  const canBuild = usePermission(AGENT_TEAM_PERMISSIONS.BUILD);
-  const canSchedule = usePermission(AGENT_TEAM_PERMISSIONS.SCHEDULE);
+  const hasBuild = usePermission(AGENT_TEAM_PERMISSIONS.BUILD);
+  const hasSchedule = usePermission(AGENT_TEAM_PERMISSIONS.SCHEDULE);
 
   const [tab, setTab] = useState<Tab>('members');
 
@@ -66,12 +69,30 @@ export function AgentTeamDetailScreen() {
   const [runScheduleNow] = useRunAgentTeamScheduleNowMutation();
   const [runningScheduleId, setRunningScheduleId] = useState<string | null>(null);
 
+  /* Role permissions AND this team's own access: a Viewer or Runner on a shared team may
+     not edit it, whatever their role says. */
+  const row = team ? toAgentTeamRow(team) : null;
+  const canBuild = hasBuild && Boolean(row?.canEditTeam);
+  const canSchedule = hasSchedule && Boolean(row?.canEditTeam);
+  const blockedReason = row ? chatBlockedReason(row) : '';
+  /* People are only needed to name who a team is shared with. */
+  const usersQuery = useGetAssignableUsersQuery(undefined, { skip: tab !== 'access' });
+
+  const openAgent = (agentId: string) =>
+    (navigation as unknown as { getParent: (id: string) => { navigate: (...a: unknown[]) => void } | undefined })
+      .getParent('RootDrawer')
+      ?.navigate('MainTabs', { screen: 'CompanyAgentsTab', params: { screen: 'AgentDetail', params: { id: agentId } } });
+
   const isMemberSubmitting = isRemoving || isUpdating;
   const hierarchy = useMemo(() => (team ? hierarchyRows(team) : []), [team]);
   const title = team?.name ?? params.name ?? 'Team';
 
   const handleChat = () => {
     if (!team) return;
+    if (blockedReason) {
+      toast.show(blockedReason, { tone: 'warning' });
+      return;
+    }
     const target = teamChatTarget(toAgentTeamRow(team));
     if (target.kind === 'thread') openTeamConversation(navigation, target.conversationId, team.name);
     else openNewTeamChat(navigation as never, target.agentIds);
@@ -246,6 +267,43 @@ export function AgentTeamDetailScreen() {
     </>
   );
 
+  const users = usersQuery.data ?? [];
+  const nameOf = (userId: string) => {
+    const u = users.find((x) => x.id === userId);
+    return u ? u.name?.trim() || u.email : 'A colleague';
+  };
+  const accessTab = (
+    <>
+      {sectionHeader(
+        'Access',
+        ACCESS_MODE_COPY[team.accessMode].description,
+        row?.canManageAccess ? <Button label="Edit" icon="edit" size="sm" onPress={() => navigation.navigate('AgentTeamAccess', { teamId: team.id })} /> : undefined,
+      )}
+      <View style={[styles.hero, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderRadius: theme.radii.xl, gap: 8 }]}>
+        <Text style={{ color: theme.colors.text, fontFamily: theme.fontFamilies.body.semibold, fontSize: theme.fontSizes.sm }}>{ACCESS_MODE_COPY[team.accessMode].label}</Text>
+        {team.accessMode === 'SPECIFIC' ? (
+          team.access.length === 0 ? (
+            <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.xs }}>
+              {row?.canManageAccess ? 'Nobody else yet.' : 'The people it is shared with are only shown to whoever manages it.'}
+            </Text>
+          ) : (
+            team.access.map((g) => (
+              <View key={g.userId} style={styles.grantRow}>
+                <Text numberOfLines={1} style={{ flex: 1, color: theme.colors.text, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.sm }}>
+                  {nameOf(g.userId)}
+                </Text>
+                <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.semibold, fontSize: theme.fontSizes.xs }}>{ACCESS_ROLE_COPY[g.role].label}</Text>
+              </View>
+            ))
+          )
+        ) : null}
+        <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.xs }}>
+          Your access: {team.myAccess === 'MANAGE' ? 'manage' : team.myAccess === 'EDIT' ? 'edit' : team.myAccess === 'USE' ? 'use' : 'view only'}.
+        </Text>
+      </View>
+    </>
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title={team.name} mode="stack" onBack={() => navigation.goBack()} />
@@ -298,19 +356,25 @@ export function AgentTeamDetailScreen() {
             ))}
           </View>
 
-          <Button label={detailChatLabel(team.origin)} icon="chat-bubble-outline" onPress={handleChat} fullWidth />
+          {!team.readiness.ready ? <NotReadyBanner pending={team.readiness.pendingMembers} onOpenAgent={openAgent} /> : null}
+
+          <Button label={detailChatLabel(team.origin)} icon="chat-bubble-outline" onPress={handleChat} fullWidth disabled={Boolean(blockedReason)} />
+          {blockedReason && team.readiness.ready ? (
+            <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.xs, textAlign: 'center' }}>{blockedReason}</Text>
+          ) : null}
         </View>
 
         <UnderlineTabs
           tabs={[
             { value: 'members' as Tab, label: 'Members', count: team.specialists.length },
             { value: 'schedules' as Tab, label: 'Schedules', ...(schedulesQuery.data ? { count: schedules.length } : {}) },
+            { value: 'access' as Tab, label: 'Access' },
           ]}
           value={tab}
           onChange={setTab}
         />
 
-        {tab === 'members' ? membersTab : schedulesTab}
+        {tab === 'members' ? membersTab : tab === 'schedules' ? schedulesTab : accessTab}
       </ScrollView>
     </View>
   );
@@ -329,4 +393,5 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 4 },
   sectionTitle: { fontSize: 17 },
   callout: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: 12 },
+  grantRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 });

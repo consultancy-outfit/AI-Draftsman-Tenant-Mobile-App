@@ -25,7 +25,9 @@ export function ChatConversationStack() {
       <Stack.Screen name="ChatConversation" component={ChatConversationScreen} />
       <Stack.Screen name="ChatThreadDetails" component={ChatThreadDetailsScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="ChatThreadSearch" component={ChatThreadSearchScreen} options={{ presentation: 'modal' }} />
-      <Stack.Screen name="PairComputer" component={PairComputerScreen} options={{ presentation: 'modal' }} />
+      {/* A plain push, not a native modal: leaving through the drawer (after pairing) cannot dismiss a
+          modal, so on iOS the scanner stayed on screen over Dispatch. */}
+      <Stack.Screen name="PairComputer" component={PairComputerScreen} />
       <Stack.Screen name="DispatchThread" component={DispatchThreadScreen} />
       <Stack.Screen name="DeviceArtifact" component={DeviceArtifactScreen} />
     </Stack.Navigator>

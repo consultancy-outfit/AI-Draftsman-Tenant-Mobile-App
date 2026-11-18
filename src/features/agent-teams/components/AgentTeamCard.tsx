@@ -4,7 +4,7 @@ import { Icon, type IconName } from '@/components/ui';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { formatRelativeTime } from '@/utils/format';
 
-import { chatButtonLabel, visiblePurpose, type AgentTeamRow } from '../agentTeamsRules';
+import { chatBlockedReason, chatButtonLabel, visiblePurpose, type AgentTeamRow } from '../agentTeamsRules';
 
 interface AgentTeamCardProps {
   row: AgentTeamRow;
@@ -108,16 +108,26 @@ export function AgentTeamCard({ row, canBuild, canDelete, onOpen, onChat, onEdit
         </View>
       </View>
 
-      {fromChat && (
-        <View style={[styles.chip, { borderColor: theme.colors.statusInfoFg, borderRadius: theme.radii.full }]}>
-          <Text style={{ color: theme.colors.statusInfoFg, fontFamily: theme.fontFamilies.body.semibold, fontSize: 11 }}>From chat</Text>
+      <View style={styles.chips}>
+        {fromChat && (
+          <View style={[styles.chip, { borderColor: theme.colors.statusInfoFg, borderRadius: theme.radii.full }]}>
+            <Text style={{ color: theme.colors.statusInfoFg, fontFamily: theme.fontFamilies.body.semibold, fontSize: 11 }}>From chat</Text>
+          </View>
+        )}
+        <View style={[styles.chip, { borderColor: theme.colors.border, borderRadius: theme.radii.full }]}>
+          <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.semibold, fontSize: 11 }}>{row.accessLabel}</Text>
         </View>
-      )}
+        {!row.ready && (
+          <View style={[styles.chip, { borderColor: theme.colors.statusErrorFg, borderRadius: theme.radii.full }]}>
+            <Text style={{ color: theme.colors.statusErrorFg, fontFamily: theme.fontFamilies.body.semibold, fontSize: 11 }}>Not ready</Text>
+          </View>
+        )}
+      </View>
 
       <View style={styles.actions}>
-        <ActionButton icon="chat-bubble-outline" label={chatButtonLabel(row.origin)} onPress={onChat} tone="accent" />
-        <ActionButton icon="edit" label="Edit" onPress={onEdit} tone="neutral" disabled={!canBuild} />
-        <ActionButton icon="delete-outline" label="Delete" onPress={onDelete} tone="danger" disabled={!canDelete} />
+        <ActionButton icon="chat-bubble-outline" label={chatButtonLabel(row.origin)} onPress={onChat} tone="accent" disabled={Boolean(chatBlockedReason(row))} />
+        <ActionButton icon="edit" label="Edit" onPress={onEdit} tone="neutral" disabled={!canBuild || !row.canEditTeam} />
+        <ActionButton icon="delete-outline" label="Delete" onPress={onDelete} tone="danger" disabled={!canDelete || !row.canDeleteTeam} />
       </View>
     </TouchableOpacity>
   );
@@ -134,7 +144,8 @@ const styles = StyleSheet.create({
   metricLabel: { fontFamily: 'InstrumentSans_700Bold', fontSize: 10, letterSpacing: 0.4 },
   metricValue: { fontFamily: 'InstrumentSans_600SemiBold', fontSize: 13 },
   divider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', marginHorizontal: 10 },
-  chip: { alignSelf: 'flex-start', borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4, marginTop: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  chip: { alignSelf: 'flex-start', borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, paddingVertical: 4 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   action: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 9, borderWidth: 1 },
   dimmed: { opacity: 0.45 },

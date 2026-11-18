@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
-import { FlatList, KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import { api } from '@/store/api';
 import { useAppDispatch } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
+import { KeyboardLift } from '@/utils/KeyboardLift';
 
 import { ApprovalCard } from './components/ApprovalCard';
 import { DesktopRunHeader, NoStepsWarning, isNoStepsRun } from './components/DesktopRunHeader';
@@ -307,7 +308,7 @@ function DispatchThread() {
   ) : null;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: theme.colors.background }} behavior="padding">
+    <KeyboardLift style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title={title} mode="stack" onBack={goBack} />
 
       <View style={styles.subHeader}>
@@ -407,7 +408,7 @@ function DispatchThread() {
         </View>
         {!target && thread && !isAgent ? <Text style={{ color: theme.colors.textMuted, fontSize: 12 }}>Loading this thread's model…</Text> : null}
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardLift>
   );
 }
 

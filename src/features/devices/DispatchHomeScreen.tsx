@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
+import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from 'react-native';
 import { DrawerActions, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +12,7 @@ import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppSelector } from '@/store/hooks';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
+import { KeyboardLift } from '@/utils/KeyboardLift';
 
 import { NewDispatchThreadSheet } from './components/NewDispatchThreadSheet';
 import { useDeleteDispatchThreadMutation, useGetDispatchThreadsQuery, useRenameDispatchThreadMutation } from './devicesApi';
@@ -217,7 +218,7 @@ export function DispatchHomeScreen() {
       </Modal>
 
       <Modal visible={!!renaming} transparent animationType="fade" onRequestClose={() => setRenaming(null)}>
-        <KeyboardAvoidingView style={styles.scrim} behavior="padding">
+        <KeyboardLift style={styles.scrim}>
           <View style={[styles.sheet, { backgroundColor: theme.colors.surface, paddingBottom: (keyboardOpen ? 0 : insets.bottom) + 16, gap: 10 }]}>
             <Text style={{ color: theme.colors.text, fontSize: 17, fontFamily: theme.fontFamilies.display.semibold }}>Rename thread</Text>
             <TextInput
@@ -240,7 +241,7 @@ export function DispatchHomeScreen() {
               />
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </KeyboardLift>
       </Modal>
     </View>
   );

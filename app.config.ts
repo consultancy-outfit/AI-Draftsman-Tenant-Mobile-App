@@ -102,6 +102,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.RECORD_AUDIO',
       'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.WRITE_EXTERNAL_STORAGE',
+      /* expo-audio's manifest adds these for background playback, which AI Learning's
+         narration never uses. A declared foreground-service type needs a Play Console
+         declaration, so they are blocked rather than shipped unused. */
+      'android.permission.FOREGROUND_SERVICE',
+      'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
     ],
     intentFilters: [
       {
@@ -118,6 +123,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
+    /* AI Learning plays narration only. No recording, so no microphone prompt text on iOS. */
+    ['expo-audio', { microphonePermission: false }],
     ['expo-camera', { cameraPermission: 'Used to scan the pairing code shown on your computer.', recordAudioAndroid: false }],
     /*
      * Android release optimisation — Play Console flagged "DEX code

@@ -4,6 +4,7 @@ import { DrawerActions, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppHeader } from '@/components/shell/AppHeader';
+import { TeamMarketplaceSection } from '@/features/agent-team-marketplace/TeamMarketplaceSection';
 import { useAppTheme } from '@/theme/ThemeContext';
 
 import type { MarketplaceStackParamList } from '@/navigation/types';
@@ -13,12 +14,13 @@ import { MARKETPLACE_SCREEN_SUBTITLE } from './marketplaceRules';
 
 type Nav = NativeStackNavigationProp<MarketplaceStackParamList>;
 
-type TopTab = 'connectors' | 'skills' | 'agents';
+type TopTab = 'connectors' | 'skills' | 'agents' | 'teams';
 
 const TOP_TABS: Array<{ value: TopTab; label: string }> = [
   { value: 'connectors', label: 'Connectors' },
   { value: 'skills', label: 'Skills' },
   { value: 'agents', label: 'Agents' },
+  { value: 'teams', label: 'Agent Teams' },
 ];
 
 /**
@@ -80,6 +82,15 @@ export function MarketplaceScreen() {
           onOpenOwnedSkill={(catalogueId) => navigation.navigate('OwnedSkillDetail', { catalogueId })}
           onAddSkill={() => navigation.navigate('AddSkill')}
         />
+      ) : tab === 'teams' ? (
+        <TeamMarketplaceSection
+          onOpenTemplate={(id) => navigation.navigate('MarketplaceTeamDetail', { id })}
+          onOpenTeam={(id, name) =>
+            (navigation as unknown as { getParent: (id: string) => { navigate: (...a: unknown[]) => void } | undefined })
+              .getParent('RootDrawer')
+              ?.navigate('AgentTeams', { screen: 'AgentTeamDetail', params: { id, name } })
+          }
+        />
       ) : (
         <MarketplaceKindSection
           resource="agent"
@@ -94,6 +105,7 @@ export function MarketplaceScreen() {
 
 const styles = StyleSheet.create({
   subtitleBlock: { paddingHorizontal: 16, paddingTop: 12 },
-  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
+  /* Wraps onto a second line on a narrow phone instead of scrolling sideways. */
+  tabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
   tabChip: { paddingHorizontal: 16, paddingVertical: 9 },
 });

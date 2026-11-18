@@ -5,6 +5,8 @@ import { UsageSpendScreen } from '@/features/usage-spend/UsageSpendScreen';
 
 import { AppTabs } from './AppTabs';
 import { AgentTeamsStack } from './stacks/AgentTeamsStack';
+import { AiLearningStack } from './stacks/AiLearningStack';
+import { ApprenticeshipsStack, MyLearningStack } from './stacks/LearningStack';
 import { MySurveysStack } from './stacks/MySurveysStack';
 import { SurveysStack } from './stacks/SurveysStack';
 import { SidebarContent } from './SidebarContent';
@@ -43,7 +45,9 @@ export function AppDrawer() {
       drawerContent={(props) => <SidebarContent {...props} />}
     >
       <Drawer.Screen name="MainTabs" component={AppTabs} />
-      <Drawer.Screen name="ChatConversationStack" component={ChatConversationStack} />
+      {/* Back is the screen's own arrow here; the drawer's 40px edge swipe sits on top of that arrow and
+          swallowed its taps on iOS. */}
+      <Drawer.Screen name="ChatConversationStack" component={ChatConversationStack} options={{ swipeEnabled: false }} />
       <Drawer.Screen name="CustomerAgents" component={CustomerAgentsStack} />
       <Drawer.Screen name="KnowledgeBases" component={KnowledgeBasesStack} />
       <Drawer.Screen name="Playground" component={PlaygroundStack} />
@@ -56,6 +60,9 @@ export function AppDrawer() {
       <Drawer.Screen name="UsageSpend" component={UsageSpendScreen} />
       <Drawer.Screen name="Surveys" component={SurveysStack} />
       <Drawer.Screen name="MySurveys" component={MySurveysStack} />
+      <Drawer.Screen name="Apprenticeships" component={ApprenticeshipsStack} />
+      <Drawer.Screen name="MyLearning" component={MyLearningStack} />
+      <Drawer.Screen name="AiLearning" component={AiLearningStack} />
       <Drawer.Screen name="Notifications" component={NotificationsScreen} />
       <Drawer.Screen name="ApiKeys" component={ApiKeysStack} />
       <Drawer.Screen name="Team" component={TeamStack} />

@@ -14,6 +14,8 @@
 import { api } from '@/store/api';
 import { newIdempotencyKey } from '@/utils/ids';
 
+import type { AccessGrant, AccessMode } from './teamAccessRules';
+
 import type {
   AgentTeam,
   AgentTeamListParams,
@@ -24,6 +26,7 @@ import type {
   AgentTeamSchedule,
   AgentTeamsPageWire,
   AgentTeamWire,
+  AssignableUser,
   CreateAgentTeamBody,
   CreateScheduleBody,
   CreateTeamThreadBody,
@@ -64,6 +67,13 @@ export const toAgentTeam = (wire: AgentTeamWire): AgentTeam => {
     origin: wire.origin ?? 'BUILDER',
     conversationId: wire.conversationId ?? null,
     policy: wire.policy ?? null,
+    /* A server without per-team access behaves exactly like WORKSPACE with full
+       rights — role permissions are then the only gate, as before. */
+    accessMode: wire.accessMode ?? 'WORKSPACE',
+    createdBy: wire.createdBy ?? null,
+    myAccess: wire.myAccess ?? 'MANAGE',
+    access: wire.access ?? [],
+    readiness: wire.readiness ?? { ready: true, pendingMembers: [] },
   };
 };
 
@@ -146,6 +156,20 @@ export const agentTeamsApi = api.injectEndpoints({
 
     /* --- Schedules ------------------------------------------------------- */
 
+    /** `PUT /agent-teams/:id/access` — replace who may reach the team. Only the
+     * creator, the owner or an admin; anyone else gets a 404. */
+    setAgentTeamAccess: builder.mutation<AgentTeam, { id: string; accessMode: AccessMode; access: AccessGrant[] }>({
+      query: ({ id, ...body }) => ({ url: `/agent-teams/${id}/access`, method: 'PUT', body }),
+      transformResponse: (wire: AgentTeamWire) => toAgentTeam(wire),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'AgentTeam', id }, { type: 'AgentTeam', id: 'LIST' }],
+    }),
+
+    /** `GET /agent-teams/assignable-users` — who a team can be shared with. */
+    getAssignableUsers: builder.query<AssignableUser[], void>({
+      query: () => ({ url: '/agent-teams/assignable-users' }),
+      transformResponse: (wire: { items?: AssignableUser[] }) => wire.items ?? [],
+    }),
+
     getAgentTeamSchedules: builder.query<AgentTeamSchedule[], string>({
       query: (teamId) => ({ url: `/agent-teams/${teamId}/schedules` }),
       providesTags: (_r, _e, teamId) => [{ type: 'AgentTeamSchedule', id: teamId }],
@@ -219,4 +243,6 @@ export const {
   useRunAgentTeamScheduleNowMutation,
   useGetTeamThreadsQuery,
   useCreateTeamThreadMutation,
+  useSetAgentTeamAccessMutation,
+  useGetAssignableUsersQuery,
 } = agentTeamsApi;

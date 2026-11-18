@@ -84,6 +84,22 @@ export const api = createApi({
     'DeviceTask',
     'DeviceApproval',
     'DeviceArtifact',
+    /* AI Learning: keyed by slug/id plus `LIST`; quiz attempts use `ATTEMPTS:<quizId>`. */
+    'AiProvider',
+    'AiUpdate',
+    'AiShort',
+    'AiCourse',
+    'AiLesson',
+    'AiQuiz',
+    'AiProgress',
+    /* Agent Teams marketplace templates, keyed by id plus `LIST`. */
+    'MarketplaceTeam',
+    /* Apprenticeship learning (/learning/*): catalogue, enrolments, plan, competencies, tutor. */
+    'Apprenticeship',
+    'Enrollment',
+    'LearningPlan',
+    'Competency',
+    'TutorSession',
   ],
   endpoints: () => ({}),
 });

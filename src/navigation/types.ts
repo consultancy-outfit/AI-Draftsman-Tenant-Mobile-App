@@ -150,6 +150,8 @@ export type AgentTeamsStackParamList = {
   AgentTeamForm: { id?: string };
   AgentTeamAddMember: { teamId: string };
   AgentTeamScheduleForm: { teamId: string };
+  /** Who may reach the team (per-team access). */
+  AgentTeamAccess: { teamId: string };
   /** A new team thread. `agentIds` preselects a builder team's agents —
    * web's `/chat?team=<id>`; absent = "New team chat" with nobody picked. */
   AgentTeamChat: { agentIds?: string[] } | undefined;
@@ -161,6 +163,11 @@ export type MarketplaceStackParamList = {
   MarketplaceEntryDetail: { resource: 'skill' | 'agent'; id: string };
   OwnedSkillDetail: { catalogueId: string };
   AddSkill: undefined;
+  /** An Agent Team template from the marketplace, and installing it. */
+  MarketplaceTeamDetail: { id: string };
+  TeamInstall: { id: string };
+  /** After install: Schedule, then Connectors (both optional). */
+  TeamInstallWizard: { teamId: string; teamName: string; defaultObjective: string | null; requiredConnectorSlugs: string[] };
   /* Reuses Company Agents' own detail/edit/clone-out screens in place, the
      same way web's OwnedAgentsPanel reuses those dialogs rather than
      navigating away — opening, editing, or cloning out an agent from the
@@ -263,6 +270,27 @@ export type AppTabParamList = {
 /** Everything reachable from the sidebar, plus the tab bar itself as one
  * drawer screen. Each module route below is its own stack so a module can
  * grow nested screens without touching this list again. */
+/** AI Learning module (sidebar, LEARN). Home hosts the Feed / Shorts / Courses /
+ * My progress switcher; the rest are pushed over it. */
+export type AiLearningStackParamList = {
+  AiLearningHome: { tab?: 'feed' | 'shorts' | 'courses' | 'my'; shortId?: string } | undefined;
+  AiUpdateDetail: { updateId: string; title?: string };
+  AiCourseDetail: { slug: string; title?: string };
+  AiLesson: { lessonId: string; title?: string };
+  AiQuiz: { quizId: string; title?: string };
+};
+
+/** Apprenticeship Marketplace and My Learning (sidebar, LEARN). Both drawer entries mount this same set of
+ * screens (they differ only in the first one shown), so Enrol / Resume stays inside the entry you are in. */
+export type LearningStackParamList = {
+  ApprenticeshipsHome: undefined;
+  ApprenticeshipDetail: { id: string; title?: string };
+  MyLearningHome: undefined;
+  LearningWorkspace: { enrollmentId: string; title?: string; tab?: 'plan' | 'items' | 'tutor'; focusCode?: string };
+  /** One KSB item of an enrolment: assessed state, self-confidence, assessments, evidence. */
+  CompetencyDetail: { enrollmentId: string; code: string; statement?: string; readOnly?: boolean };
+};
+
 export type AppDrawerParamList = {
   /* Optionally jumps straight to a tab (e.g. the sidebar's own "Dashboard"
      row) — undefined lands on whichever tab react-navigation already has
@@ -280,6 +308,9 @@ export type AppDrawerParamList = {
   UsageSpend: undefined;
   Surveys: NavigatorScreenParams<SurveysStackParamList> | undefined;
   MySurveys: NavigatorScreenParams<MySurveysStackParamList> | undefined;
+  AiLearning: NavigatorScreenParams<AiLearningStackParamList> | undefined;
+  Apprenticeships: NavigatorScreenParams<LearningStackParamList> | undefined;
+  MyLearning: NavigatorScreenParams<LearningStackParamList> | undefined;
   /** Send work to the paired computer (sidebar, RUN). */
   Dispatch: NavigatorScreenParams<DispatchStackParamList> | undefined;
   /**

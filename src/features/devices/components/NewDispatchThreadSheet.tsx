@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, useToast } from '@/components/ui';
@@ -7,6 +7,7 @@ import { useGetAvailableAgentsForChatQuery } from '@/features/chat/chatApi';
 import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
+import { KeyboardLift } from '@/utils/KeyboardLift';
 
 import { useCreateDispatchThreadMutation } from '../devicesApi';
 
@@ -60,7 +61,7 @@ export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
-      <KeyboardAvoidingView style={[styles.scrim, { paddingTop: insets.top }]} behavior="padding">
+      <KeyboardLift style={[styles.scrim, { paddingTop: insets.top }]}>
         <View
           style={[
             styles.sheet,
@@ -88,7 +89,7 @@ export function NewDispatchThreadSheet({ visible, onClose, onCreated }: Props) {
             <Button label="Create thread" onPress={() => void submit()} loading={isLoading} />
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardLift>
     </Modal>
   );
 }

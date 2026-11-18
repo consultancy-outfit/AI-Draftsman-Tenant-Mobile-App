@@ -12,6 +12,8 @@
  * `THREAD` (the roster a team chat minted for its own conversation).
  */
 
+import type { AccessGrant, AccessMode, MyAccess } from './teamAccessRules';
+
 export type AgentTeamOrigin = 'BUILDER' | 'THREAD';
 export type AgentTeamMemberRole = 'SUPERVISOR' | 'SPECIALIST';
 export type ToolGrantStatus = 'READY' | 'DISCONNECTED' | 'EXPIRED' | 'DENIED';
@@ -41,6 +43,20 @@ export interface AgentTeamPolicy {
   approvalRequiredActions: string[];
 }
 
+/** Can the team run? Only when every enabled specialist is evaluated and published
+ * (an agent edited after publishing drops back to draft and holds the team). */
+export interface AgentTeamReadiness {
+  ready: boolean;
+  pendingMembers: Array<{ agentId: string; name: string; status: string }>;
+}
+
+/** `GET /agent-teams/assignable-users` — who a team can be shared with. */
+export interface AssignableUser {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
 export interface AgentTeam {
   id: string;
   name: string;
@@ -59,6 +75,17 @@ export interface AgentTeam {
   memberCount: number;
   knowledgeBaseIds: string[];
   connectorInstallIds: string[];
+  /** The team-marketplace template this team was installed from, or null. */
+  clonedFromTeamMarketplaceId?: string | null;
+  /** Who may reach the team (per-team access). */
+  accessMode: AccessMode;
+  /** The creator's user id — the implicit owner. Null for machine-made teams. */
+  createdBy: string | null;
+  /** What THIS caller may do with it. */
+  myAccess: MyAccess;
+  /** The share list. Sent only to someone who may change it (`myAccess: MANAGE`). */
+  access: AccessGrant[];
+  readiness: AgentTeamReadiness;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,8 +101,27 @@ export type AgentTeamMemberWire = Omit<AgentTeamMember, 'capabilities' | 'toolGr
 export interface AgentTeamWire
   extends Omit<
     AgentTeam,
-    'specialists' | 'supervisor' | 'memberCount' | 'knowledgeBaseIds' | 'connectorInstallIds' | 'origin' | 'conversationId' | 'policy'
+    | 'specialists'
+    | 'supervisor'
+    | 'memberCount'
+    | 'knowledgeBaseIds'
+    | 'connectorInstallIds'
+    | 'origin'
+    | 'conversationId'
+    | 'policy'
+    | 'readiness'
+    | 'accessMode'
+    | 'createdBy'
+    | 'myAccess'
+    | 'access'
   > {
+  /** Absent from a server that predates the published-specialists rule. */
+  readiness?: AgentTeamReadiness;
+  /** Absent from a server that predates per-team access. */
+  accessMode?: AccessMode;
+  createdBy?: string | null;
+  myAccess?: MyAccess;
+  access?: AccessGrant[];
   origin?: AgentTeamOrigin;
   conversationId?: string | null;
   policy?: AgentTeamPolicy | null;
