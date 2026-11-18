@@ -5,6 +5,7 @@ import { UsageSpendScreen } from '@/features/usage-spend/UsageSpendScreen';
 
 import { AppTabs } from './AppTabs';
 import { AgentTeamsStack } from './stacks/AgentTeamsStack';
+import { AiLearningStack } from './stacks/AiLearningStack';
 import { MySurveysStack } from './stacks/MySurveysStack';
 import { SurveysStack } from './stacks/SurveysStack';
 import { SidebarContent } from './SidebarContent';
@@ -56,6 +57,7 @@ export function AppDrawer() {
       <Drawer.Screen name="UsageSpend" component={UsageSpendScreen} />
       <Drawer.Screen name="Surveys" component={SurveysStack} />
       <Drawer.Screen name="MySurveys" component={MySurveysStack} />
+      <Drawer.Screen name="AiLearning" component={AiLearningStack} />
       <Drawer.Screen name="Notifications" component={NotificationsScreen} />
       <Drawer.Screen name="ApiKeys" component={ApiKeysStack} />
       <Drawer.Screen name="Team" component={TeamStack} />

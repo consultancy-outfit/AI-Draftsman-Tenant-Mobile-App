@@ -84,6 +84,14 @@ export const api = createApi({
     'DeviceTask',
     'DeviceApproval',
     'DeviceArtifact',
+    /* AI Learning: keyed by slug/id plus `LIST`; quiz attempts use `ATTEMPTS:<quizId>`. */
+    'AiProvider',
+    'AiUpdate',
+    'AiShort',
+    'AiCourse',
+    'AiLesson',
+    'AiQuiz',
+    'AiProgress',
   ],
   endpoints: () => ({}),
 });

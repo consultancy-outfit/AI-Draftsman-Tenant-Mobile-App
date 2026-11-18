@@ -263,6 +263,16 @@ export type AppTabParamList = {
 /** Everything reachable from the sidebar, plus the tab bar itself as one
  * drawer screen. Each module route below is its own stack so a module can
  * grow nested screens without touching this list again. */
+/** AI Learning module (sidebar, LEARN). Home hosts the Feed / Shorts / Courses /
+ * My progress switcher; the rest are pushed over it. */
+export type AiLearningStackParamList = {
+  AiLearningHome: { tab?: 'feed' | 'shorts' | 'courses' | 'my'; shortId?: string } | undefined;
+  AiUpdateDetail: { updateId: string; title?: string };
+  AiCourseDetail: { slug: string; title?: string };
+  AiLesson: { lessonId: string; title?: string };
+  AiQuiz: { quizId: string; title?: string };
+};
+
 export type AppDrawerParamList = {
   /* Optionally jumps straight to a tab (e.g. the sidebar's own "Dashboard"
      row) — undefined lands on whichever tab react-navigation already has
@@ -280,6 +290,7 @@ export type AppDrawerParamList = {
   UsageSpend: undefined;
   Surveys: NavigatorScreenParams<SurveysStackParamList> | undefined;
   MySurveys: NavigatorScreenParams<MySurveysStackParamList> | undefined;
+  AiLearning: NavigatorScreenParams<AiLearningStackParamList> | undefined;
   /** Send work to the paired computer (sidebar, RUN). */
   Dispatch: NavigatorScreenParams<DispatchStackParamList> | undefined;
   /**

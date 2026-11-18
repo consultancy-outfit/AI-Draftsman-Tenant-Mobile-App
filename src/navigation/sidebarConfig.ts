@@ -7,6 +7,7 @@ import {
   CLONE_PERMISSIONS,
   CUSTOMER_PERMISSIONS,
   DASHBOARD_PERMISSIONS,
+  LEARNING_PERMISSIONS,
   KEY_PERMISSIONS,
   KNOWLEDGE_BASE_PERMISSIONS,
   LEAD_CRITERIA_PERMISSIONS,
@@ -59,7 +60,7 @@ export const DASHBOARD_SIDEBAR_ITEM: SidebarItem = {
 };
 
 export interface SidebarSection {
-  id: 'build' | 'run' | 'setup';
+  id: 'build' | 'run' | 'learn' | 'setup';
   label: string;
   items: SidebarItem[];
 }
@@ -165,6 +166,22 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
         subtitle: 'Surveys assigned to you',
         icon: 'mySurveys',
         permission: SURVEY_PERMISSIONS.RESPOND,
+      },
+    ],
+  },
+  {
+    /* Web's LEARN group, between RUN and SETUP. Only the AI Learning module
+       is on mobile so far (feed, shorts, courses, my progress), all behind
+       `learning.use`, which the backend seeds to every system role. */
+    id: 'learn',
+    label: 'LEARN',
+    items: [
+      {
+        route: 'AiLearning',
+        label: 'AI Learning',
+        subtitle: 'AI news, shorts, courses and your progress',
+        icon: 'aiLearning',
+        permission: LEARNING_PERMISSIONS.USE,
       },
     ],
   },
