@@ -67,7 +67,7 @@ export const FAVOURITE_FILTER_OPTIONS: PickerOption[] = [
 export const LEARNING_COPY = {
   marketplaceDescription:
     'Published apprenticeship standards you can learn with an AI tutor. Enrol in as many as you like.',
-  searchPlaceholder: 'Search by title, reference or occupation',
+  searchPlaceholder: 'Search apprenticeships',
   noResultsTitle: 'No apprenticeships match',
   noResultsDescription: 'Try a different search or clear a filter.',
   emptyCatalogueTitle: 'No apprenticeships are published yet',

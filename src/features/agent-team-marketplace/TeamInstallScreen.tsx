@@ -46,10 +46,10 @@ export function TeamInstallScreen() {
 
   const back = () => navigation.goBack();
   const shell = (children: React.ReactNode) => (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <KeyboardLift style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title="Install team" mode="stack" onBack={back} />
-      <KeyboardLift style={{ flex: 1 }}>{children}</KeyboardLift>
-    </View>
+      {children}
+    </KeyboardLift>
   );
 
   if (isLoading) return shell(<Loader fullScreen />);

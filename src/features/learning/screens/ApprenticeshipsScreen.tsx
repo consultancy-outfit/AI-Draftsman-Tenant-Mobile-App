@@ -91,10 +91,10 @@ export function ApprenticeshipsScreen() {
       <TextField value={search} onChangeText={setSearch} placeholder={LEARNING_COPY.searchPlaceholder} leftIcon="search" autoCapitalize="none" autoCorrect={false} returnKeyType="search" />
       <View style={styles.pickers}>
         <View style={styles.cell}><PickerField value={level} options={LEVEL_FILTER_OPTIONS} onChange={setLevel} /></View>
-        <View style={styles.cell}><PickerField value={enrolment} options={ENROLMENT_FILTER_OPTIONS} onChange={setEnrolment} /></View>
+        <View style={styles.cell}><PickerField value={favourite} options={FAVOURITE_FILTER_OPTIONS} onChange={setFavourite} /></View>
       </View>
+      <PickerField value={enrolment} options={ENROLMENT_FILTER_OPTIONS} onChange={setEnrolment} />
       <PickerField value={route} options={ROUTE_FILTER_OPTIONS} onChange={setRoute} searchable />
-      <PickerField value={favourite} options={FAVOURITE_FILTER_OPTIONS} onChange={setFavourite} />
       {hasFilters ? (
         <TouchableOpacity
           onPress={() => {

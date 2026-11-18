@@ -3,6 +3,9 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Card, Icon } from '@/components/ui';
 import { useAppTheme } from '@/theme/ThemeContext';
 
+import type { AgentTeam } from '@/features/agent-teams/agentTeams.types';
+import { accessChipLabel } from '@/features/agent-teams/teamAccessRules';
+
 import { TEAM_COPY } from '../teamMarketplace.data';
 import type { MarketplaceTeam } from '../teamMarketplace.types';
 
@@ -57,3 +60,38 @@ const styles = StyleSheet.create({
   meta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: { paddingHorizontal: 10, paddingVertical: 3 },
 });
+
+/** One of this workspace's own teams (the "My teams" view): name, purpose, size, who can use it, readiness. */
+export function OwnedTeamCard({ team, onPress }: { team: AgentTeam; onPress: () => void }) {
+  const { theme } = useAppTheme();
+  const pill = (label: string, tone: 'warning' | 'neutral') => (
+    <View style={[styles.pill, { backgroundColor: tone === 'warning' ? theme.colors.statusWarningBg : theme.colors.statusNeutralBg, borderRadius: theme.radii.full }]}>
+      <Text style={{ color: tone === 'warning' ? theme.colors.statusWarningFg : theme.colors.statusNeutralFg, fontFamily: theme.fontFamilies.body.semibold, fontSize: theme.fontSizes.xs }}>{label}</Text>
+    </View>
+  );
+  return (
+    <TouchableOpacity activeOpacity={0.8} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${team.name}`}>
+      <Card style={{ gap: 8 }}>
+        <View style={styles.top}>
+          <View style={[styles.icon, { backgroundColor: theme.colors.statusNeutralBg, borderRadius: theme.radii.md }]}>
+            <Icon name="account-tree" size={20} color={theme.colors.accent} />
+          </View>
+          <Text style={{ flex: 1, color: theme.colors.text, fontFamily: theme.fontFamilies.display.semibold, fontSize: theme.fontSizes.md }} numberOfLines={2}>
+            {team.name}
+          </Text>
+          <Icon name="chevron-right" size={22} color={theme.colors.textMuted} />
+        </View>
+        {team.purpose && team.purpose !== team.name ? (
+          <Text numberOfLines={2} style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.sm, lineHeight: 20 }}>
+            {team.purpose}
+          </Text>
+        ) : null}
+        <View style={styles.meta}>
+          {pill(`${team.specialists.length} specialist${team.specialists.length === 1 ? '' : 's'}`, 'neutral')}
+          {pill(accessChipLabel(team.accessMode, team.access.length), 'neutral')}
+          {!team.readiness.ready ? pill('Not ready', 'warning') : null}
+        </View>
+      </Card>
+    </TouchableOpacity>
+  );
+}

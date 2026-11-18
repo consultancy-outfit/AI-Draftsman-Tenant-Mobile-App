@@ -6,7 +6,6 @@ import { Button, EmptyState, Icon, Loader, MarkdownText, PickerField, TextField,
 import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
 import { newIdempotencyKey } from '@/utils/ids';
-import { KeyboardLift } from '@/utils/KeyboardLift';
 
 import { LEARNING_COPY } from '../learning.data';
 import { LEARNING_DISCLAIMER, TUTOR_POLL_INTERVAL_MS, learningErrorCode, shouldPollTutor, tutorPanelState } from '../learning.logic';
@@ -139,8 +138,7 @@ export function TutorPanel({ enrollmentId, enrolmentActive, focusCode, onClearFo
   const text = (s: string, color: string = theme.colors.textMuted) => <Text style={{ color, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.xs, lineHeight: 17 }}>{s}</Text>;
 
   return (
-    <KeyboardLift style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
         <View style={[styles.top, { borderBottomColor: theme.colors.border }]}>
           {list.length > 1 ? (
             <PickerField value={sessionId ?? ''} options={list.map((s, i) => ({ value: s.id, label: sessionLabel(s, i) }))} onChange={setSessionId} />
@@ -152,7 +150,18 @@ export function TutorPanel({ enrollmentId, enrolmentActive, focusCode, onClearFo
         </View>
 
         {!session ? (
-          <EmptyState icon="school" title={LEARNING_COPY.tutorName} description={enrolmentActive ? 'Start a session to talk to your AI tutor about this course.' : 'This course is not active, so a new session cannot be started.'} />
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <EmptyState icon="school" title={LEARNING_COPY.tutorName} description={enrolmentActive ? 'Start a session to talk to your AI tutor about this course.' : 'This course is not active, so a new session cannot be started.'} />
+          </View>
+        ) : messages.isLoading ? (
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <Loader label="Loading messages…" />
+          </View>
+        ) : rows.length === 0 ? (
+          /* Not a ListEmptyComponent: an inverted list turns its empty component upside down. */
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <EmptyState icon="chat" title="Ask your tutor anything" description="Your tutor can explain items, set practice and assess you." />
+          </View>
         ) : (
           <FlatList
             inverted
@@ -161,15 +170,6 @@ export function TutorPanel({ enrollmentId, enrolmentActive, focusCode, onClearFo
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-            ListEmptyComponent={
-              messages.isLoading ? (
-                <Loader label="Loading messages…" />
-              ) : (
-                <View style={{ transform: [{ scaleY: -1 }] }}>
-                  <EmptyState icon="chat" title="Ask your tutor anything" description="Your tutor can explain items, set practice and assess you." />
-                </View>
-              )
-            }
             renderItem={({ item }) => {
               const mine = 'pending' in item || item.role === 'learner';
               const m = 'pending' in item ? null : item;
@@ -241,8 +241,7 @@ export function TutorPanel({ enrollmentId, enrolmentActive, focusCode, onClearFo
             </View>
           </View>
         ) : null}
-      </View>
-    </KeyboardLift>
+    </View>
   );
 }
 

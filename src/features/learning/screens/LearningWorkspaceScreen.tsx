@@ -10,6 +10,7 @@ import { useDebouncedValue } from '@/features/aiLearning/useDebouncedValue';
 import type { LearningStackParamList } from '@/navigation/types';
 import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
+import { KeyboardLift } from '@/utils/KeyboardLift';
 
 import { CompetencyStateTag, LearningDisclaimer, LearningError, Pill, ProgressSummaryView, SafetyNotice } from '../components/LearningShared';
 import { TutorPanel } from '../components/TutorPanel';
@@ -222,7 +223,7 @@ export function LearningWorkspaceScreen() {
         <View style={{ gap: 12 }}>
           {summary}
           {tab === 'items' ? (
-            <View style={{ gap: 10 }}>
+            <View style={{ gap: 10, marginBottom: 6 }}>
               <TextField value={search} onChangeText={setSearch} placeholder="Search items" leftIcon="search" autoCapitalize="none" autoCorrect={false} returnKeyType="search" />
               <StatusTabs
                 tabs={[{ value: '', label: 'All' }, ...KSB_TYPE_ORDER.map((t) => ({ value: t, label: KSB_TYPE_LABELS[t] }))]}
@@ -269,7 +270,7 @@ export function LearningWorkspaceScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <KeyboardLift style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title={title} mode="stack" onBack={back} />
       {tab === 'tutor' ? (
         <View style={{ flex: 1 }}>
@@ -289,7 +290,7 @@ export function LearningWorkspaceScreen() {
       ) : (
         container
       )}
-    </View>
+    </KeyboardLift>
   );
 }
 

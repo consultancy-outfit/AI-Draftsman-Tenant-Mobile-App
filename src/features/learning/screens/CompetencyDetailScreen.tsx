@@ -72,10 +72,10 @@ export function CompetencyDetailScreen() {
 
   const back = () => navigation.goBack();
   const shell = (children: React.ReactNode) => (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <KeyboardLift style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title={code} mode="stack" onBack={back} />
-      <KeyboardLift style={{ flex: 1 }}>{children}</KeyboardLift>
-    </View>
+      {children}
+    </KeyboardLift>
   );
 
   if (enrollment.isLoading) return shell(<Loader fullScreen />);
@@ -205,9 +205,9 @@ export function CompetencyDetailScreen() {
         )}
         {active ? (
           <View style={{ gap: 10 }}>
-            <TextField label="Title" value={title} onChangeText={setTitle} error={errors.title} maxLength={200} />
-            <TextField label="What does it show?" value={description} onChangeText={setDescription} error={errors.description} multiline numberOfLines={3} style={{ minHeight: 80, textAlignVertical: 'top', paddingTop: 10 }} maxLength={2000} />
-            <TextField label="Link (optional)" value={link} onChangeText={setLink} error={errors.link} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
+            <TextField label="Title" value={title} onChangeText={(v) => { setTitle(v); if (errors.title) setErrors((e) => ({ ...e, title: undefined })); }} error={errors.title} maxLength={200} />
+            <TextField label="What does it show?" value={description} onChangeText={(v) => { setDescription(v); if (errors.description) setErrors((e) => ({ ...e, description: undefined })); }} error={errors.description} multiline numberOfLines={3} style={{ minHeight: 80, textAlignVertical: 'top', paddingTop: 10 }} maxLength={2000} />
+            <TextField label="Link (optional)" value={link} onChangeText={(v) => { setLink(v); if (errors.link) setErrors((e) => ({ ...e, link: undefined })); }} error={errors.link} autoCapitalize="none" autoCorrect={false} keyboardType="url" />
             <Button label="Submit evidence" onPress={() => void onSubmitEvidence()} loading={submitting} fullWidth />
           </View>
         ) : (

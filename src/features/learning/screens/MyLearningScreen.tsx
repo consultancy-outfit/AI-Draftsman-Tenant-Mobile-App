@@ -49,7 +49,7 @@ export function MyLearningScreen() {
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           refreshControl={<RefreshControl refreshing={isFetching && !isLoading} onRefresh={() => void refetch()} tintColor={theme.colors.accent} />}
           ListHeaderComponent={
-            <View style={{ gap: 12 }}>
+            <View style={{ gap: 12, marginBottom: 12 }}>
               <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.sm, lineHeight: 20 }}>{LEARNING_COPY.myLearningDescription}</Text>
               {(data ?? []).length > 0 ? <PickerField value={status} options={STATUS_OPTIONS} onChange={(v) => setStatus(v as EnrollmentStatusFilter)} /> : null}
             </View>

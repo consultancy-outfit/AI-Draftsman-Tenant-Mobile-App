@@ -4,11 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, Loader, StatusTabs, TextField } from '@/components/ui';
 import { Chip } from '@/features/aiLearning/components/Chip';
-import { AgentTeamCard } from '@/features/agent-teams/components/AgentTeamCard';
-import { toAgentTeamRow } from '@/features/agent-teams/agentTeamsRules';
 import { useAppTheme } from '@/theme/ThemeContext';
 
-import { TeamCard } from './components/TeamCard';
+import { OwnedTeamCard, TeamCard } from './components/TeamCard';
 import { useInstalledTemplates } from './useTeamCatalogue';
 import { useGetMarketplaceTeamsQuery } from './teamMarketplaceApi';
 import { TEAM_CATALOGUE_LIMIT, TEAM_COPY, TEAM_SEARCH_DEBOUNCE_MS } from './teamMarketplace.data';
@@ -70,20 +68,13 @@ export function TeamMarketplaceSection({ onOpenTemplate, onOpenTeam }: TeamMarke
       <FlatList
         data={installed.workspaceTeams}
         keyExtractor={(t) => t.id}
+        removeClippedSubviews={false}
         contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]}
         ListHeaderComponent={tabs}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => void installed.refetch()} tintColor={theme.colors.accent} />}
         renderItem={({ item }) => (
-          <AgentTeamCard
-            row={toAgentTeamRow(item)}
-            canBuild={false}
-            canDelete={false}
-            onOpen={() => onOpenTeam(item.id, item.name)}
-            onChat={() => onOpenTeam(item.id, item.name)}
-            onEdit={() => onOpenTeam(item.id, item.name)}
-            onDelete={() => onOpenTeam(item.id, item.name)}
-          />
+          <OwnedTeamCard team={item} onPress={() => onOpenTeam(item.id, item.name)} />
         )}
         ListEmptyComponent={
           installed.isLoading ? <Loader label="Loading your teams…" /> : <EmptyState icon="account-tree" title={TEAM_COPY.ownedEmptyTitle} description={TEAM_COPY.ownedEmptyDescription} />
@@ -112,6 +103,7 @@ export function TeamMarketplaceSection({ onOpenTemplate, onOpenTeam }: TeamMarke
     <FlatList
       data={list.error ? [] : rows}
       keyExtractor={(r) => r.key}
+      removeClippedSubviews={false}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]}

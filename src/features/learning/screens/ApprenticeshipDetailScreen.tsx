@@ -116,10 +116,12 @@ export function ApprenticeshipDetailScreen() {
 
       {data.safetyNotice ? <SafetyNotice text={data.safetyNotice} /> : null}
 
-      <Card style={{ gap: 8 }}>
-        {heading('Overview')}
-        {body(data.overview || data.summary)}
-      </Card>
+      {data.overview || data.summary ? (
+        <Card style={{ gap: 8 }}>
+          {heading('Overview')}
+          {body(data.overview || data.summary)}
+        </Card>
+      ) : null}
 
       {hasItems(data.learningOutcomes) ? (
         <Card style={{ gap: 8 }}>

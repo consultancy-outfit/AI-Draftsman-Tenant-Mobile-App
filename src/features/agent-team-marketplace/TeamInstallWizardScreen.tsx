@@ -130,9 +130,9 @@ export function TeamInstallWizardScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <KeyboardLift style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <AppHeader title={`Set up “${target.teamName}”`} mode="stack" onBack={close} />
-      <KeyboardLift style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]} keyboardShouldPersistTaps="handled">
           {lead('The team is installed and ready to run. Both steps are optional.')}
           <View style={styles.steps}>
@@ -236,8 +236,8 @@ export function TeamInstallWizardScreen() {
             </>
           )}
         </ScrollView>
-      </KeyboardLift>
-    </View>
+      </View>
+    </KeyboardLift>
   );
 }
 

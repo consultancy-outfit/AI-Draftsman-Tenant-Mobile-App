@@ -52,7 +52,7 @@ export function ProgressSummaryView({ progress }: { progress: ProgressSummary })
         <View style={{ width: `${percent}%`, height: '100%', backgroundColor: theme.colors.accent }} />
       </View>
       <Text style={{ color: theme.colors.textMuted, fontFamily: theme.fontFamilies.body.regular, fontSize: theme.fontSizes.xs }}>
-        {percent}% demonstrated · {progress.demonstrated} demonstrated · {progress.inProgress} in progress · {progress.notStarted} not started
+        {percent}% demonstrated · {progress.inProgress} in progress · {progress.notStarted} not started
       </Text>
     </View>
   );

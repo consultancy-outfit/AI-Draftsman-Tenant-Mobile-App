@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -54,7 +54,7 @@ export function MarketplaceScreen() {
         </Text>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll} contentContainerStyle={styles.tabRow}>
+      <View style={styles.tabRow}>
         {TOP_TABS.map((t) => {
           const active = tab === t.value;
           return (
@@ -71,7 +71,7 @@ export function MarketplaceScreen() {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       {tab === 'connectors' ? (
         <ConnectorCatalogueSection onOpenConnector={(slug) => navigation.navigate('ConnectorDetail', { slug })} />
@@ -105,7 +105,7 @@ export function MarketplaceScreen() {
 
 const styles = StyleSheet.create({
   subtitleBlock: { paddingHorizontal: 16, paddingTop: 12 },
-  tabScroll: { flexGrow: 0 },
-  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
+  /* Wraps onto a second line on a narrow phone instead of scrolling sideways. */
+  tabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 4 },
   tabChip: { paddingHorizontal: 16, paddingVertical: 9 },
 });
