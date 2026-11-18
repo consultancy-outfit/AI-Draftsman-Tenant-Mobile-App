@@ -3,29 +3,34 @@ import { BackHandler } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 /**
- * Dispatch lives in the sidebar (a drawer screen), and its threads open in the
- * drawer-level ChatConversationStack. The drawer's default back behaviour
- * returns to the FIRST drawer route (the Dashboard), so "back" from a Dispatch
- * thread or the pairing screen goes there explicitly instead: to the Dispatch list.
+ * ChatConversationStack is a drawer-level stack that outlives its screens: leaving through the drawer
+ * does not pop it, so older screens (a thread, the pairing screen) stay underneath. A plain `goBack()`
+ * would reveal them, and the drawer's own back goes to the FIRST drawer route (the Dashboard). So
+ * "back" leaves explicitly to the drawer route the screen belongs to.
+ *
+ * Pops what sits above the current screen first, then switches drawer route; also owns Android's
+ * hardware back.
  */
-export function useBackToDispatch() {
+export function useBackToDrawerRoute(route: 'Dispatch' | 'MainTabs') {
   const navigation = useNavigation();
-  const goBackToDispatch = useCallback(() => {
-    /* Pop what is stacked on top first (e.g. the pairing screen over a thread), then switch drawer route. */
+  const leave = useCallback(() => {
     if ((navigation.getState()?.routes.length ?? 0) > 1) navigation.goBack();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (navigation.getParent() as any)?.navigate('Dispatch');
-  }, [navigation]);
+    (navigation.getParent() as any)?.navigate(route);
+  }, [navigation, route]);
 
   useFocusEffect(
     useCallback(() => {
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-        goBackToDispatch();
+        leave();
         return true;
       });
       return () => sub.remove();
-    }, [goBackToDispatch]),
+    }, [leave]),
   );
 
-  return goBackToDispatch;
+  return leave;
 }
+
+/** Dispatch lives in the sidebar; its threads and the pairing screen go back to the Dispatch list. */
+export const useBackToDispatch = () => useBackToDrawerRoute('Dispatch');

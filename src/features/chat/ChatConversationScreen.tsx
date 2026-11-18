@@ -14,6 +14,7 @@ import { getErrorMessage } from '@/services/apiErrorMessage';
 import { useAppTheme } from '@/theme/ThemeContext';
 import type { ChatConversationStackParamList } from '@/navigation/types';
 import { newIdempotencyKey } from '@/utils/ids';
+import { useBackToDrawerRoute } from '@/features/devices/useBackToDispatch';
 import { useKeyboardOpen } from '@/utils/useKeyboardOpen';
 import { KeyboardLift } from '@/utils/KeyboardLift';
 
@@ -63,6 +64,7 @@ export function ChatConversationScreen() {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
   const keyboardOpen = useKeyboardOpen();
+  const goBack = useBackToDrawerRoute('MainTabs');
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Rt>();
   const toast = useToast();
@@ -225,7 +227,7 @@ export function ChatConversationScreen() {
   if (!canView) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
+        <AppHeader title={title} mode="stack" onBack={goBack} />
         <EmptyState icon="lock-outline" title={NO_ACCESS_TITLE} description={NO_ACCESS_BODY} />
       </View>
     );
@@ -234,7 +236,7 @@ export function ChatConversationScreen() {
   if (conversation.isThreadLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
+        <AppHeader title={title} mode="stack" onBack={goBack} />
         <Loader fullScreen />
       </View>
     );
@@ -243,7 +245,7 @@ export function ChatConversationScreen() {
   if (conversation.threadError) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
+        <AppHeader title={title} mode="stack" onBack={goBack} />
         <ErrorState
           title={TRANSCRIPT_ERROR_TITLE}
           message={getErrorMessage(conversation.threadError)}
@@ -261,7 +263,7 @@ export function ChatConversationScreen() {
       // safe-area spacer below is dropped while the keyboard covers the navigation bar).
      
     >
-      <AppHeader title={title} mode="stack" onBack={() => navigation.goBack()} />
+      <AppHeader title={title} mode="stack" onBack={goBack} />
 
       <View style={styles.subHeader}>
         <View style={{ flex: 1, minWidth: 0 }}>
