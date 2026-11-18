@@ -150,6 +150,8 @@ export type AgentTeamsStackParamList = {
   AgentTeamForm: { id?: string };
   AgentTeamAddMember: { teamId: string };
   AgentTeamScheduleForm: { teamId: string };
+  /** Who may reach the team (per-team access). */
+  AgentTeamAccess: { teamId: string };
   /** A new team thread. `agentIds` preselects a builder team's agents —
    * web's `/chat?team=<id>`; absent = "New team chat" with nobody picked. */
   AgentTeamChat: { agentIds?: string[] } | undefined;

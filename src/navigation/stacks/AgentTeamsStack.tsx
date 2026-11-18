@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { AddMemberScreen } from '@/features/agent-teams/AddMemberScreen';
+import { AgentTeamAccessScreen } from '@/features/agent-teams/AgentTeamAccessScreen';
 import { AgentTeamDetailScreen } from '@/features/agent-teams/AgentTeamDetailScreen';
 import { AgentTeamFormScreen } from '@/features/agent-teams/AgentTeamFormScreen';
 import { AgentTeamsScreen } from '@/features/agent-teams/AgentTeamsScreen';
@@ -21,6 +22,7 @@ export function AgentTeamsStack() {
       <Stack.Screen name="AgentTeamForm" component={AgentTeamFormScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="AgentTeamAddMember" component={AddMemberScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="AgentTeamScheduleForm" component={ScheduleFormScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="AgentTeamAccess" component={AgentTeamAccessScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="AgentTeamChat" component={TeamChatFormScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );

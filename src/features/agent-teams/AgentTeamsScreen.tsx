@@ -18,6 +18,7 @@ import {
   AGENT_TEAMS_COPY,
   DELETE_TEAM_COPY,
   SEARCH_DEBOUNCE_MS,
+  chatBlockedReason,
   teamChatTarget,
   toAgentTeamRow,
   type AgentTeamRow,
@@ -124,6 +125,11 @@ export function AgentTeamsScreen() {
   const handleNewTeamChat = () => openNewTeamChat(navigation as never);
 
   const handleChat = (row: AgentTeamRow) => {
+    const blocked = chatBlockedReason(row);
+    if (blocked) {
+      toast.show(blocked, { tone: 'warning' });
+      return;
+    }
     const target = teamChatTarget(row);
     if (target.kind === 'thread') {
       openTeamConversation(navigation, target.conversationId, row.name);
@@ -133,16 +139,16 @@ export function AgentTeamsScreen() {
   };
 
   const handleEdit = (row: AgentTeamRow) => {
-    if (!canBuild) {
-      toast.show(AGENT_TEAMS_COPY.noEditPermission, { tone: 'warning' });
+    if (!canBuild || !row.canEditTeam) {
+      toast.show(canBuild ? AGENT_TEAMS_COPY.noEditThisTeam : AGENT_TEAMS_COPY.noEditPermission, { tone: 'warning' });
       return;
     }
     navigation.navigate('AgentTeamForm', { id: row.id });
   };
 
   const handleDelete = (row: AgentTeamRow) => {
-    if (!canDelete) {
-      toast.show(AGENT_TEAMS_COPY.noDeletePermission, { tone: 'warning' });
+    if (!canDelete || !row.canDeleteTeam) {
+      toast.show(canDelete ? AGENT_TEAMS_COPY.noDeleteThisTeam : AGENT_TEAMS_COPY.noDeletePermission, { tone: 'warning' });
       return;
     }
     Alert.alert(DELETE_TEAM_COPY.title(row.name), DELETE_TEAM_COPY.body, [

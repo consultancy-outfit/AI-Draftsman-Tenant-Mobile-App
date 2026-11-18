@@ -5,6 +5,7 @@
  * `TeamTubeMap/teamJourney.ts`. No React, no store, no network — every
  * decision a screen makes from data alone lives here.
  */
+import { accessCapabilities, accessChipLabel, canDeleteTeam } from './teamAccessRules';
 import type { AgentTeam, AgentTeamMember, TmTeamWire } from './agentTeams.types';
 
 /* -------------------------------------------------------------------------- */
@@ -34,6 +35,8 @@ export const AGENT_TEAMS_COPY = {
   fromChatHint: "Created by a team chat. Its name is the thread's title, and Chat re-opens that thread.",
   noEditPermission: 'You do not have permission to edit teams',
   noDeletePermission: 'You do not have permission to delete teams',
+  noEditThisTeam: 'You do not have permission to edit this team',
+  noDeleteThisTeam: 'You do not have permission to delete this team',
   noViewTitle: 'You cannot view agent teams',
   noViewDescription: 'Viewing teams needs the "View agent teams" permission. Ask an owner or an admin to grant it.',
 } as const;
@@ -128,6 +131,16 @@ export interface AgentTeamRow {
   /** Both ids per member — the picker speaks agent ids, a removal
    * addresses the membership row. */
   members: Array<{ memberId: string; agentId: string }>;
+  /** "Company", "Only me" or "Shared · 3". */
+  accessLabel: string;
+  /** What the caller's per-team access lets them do (on top of their role). */
+  canEditTeam: boolean;
+  canDeleteTeam: boolean;
+  canUseTeam: boolean;
+  canManageAccess: boolean;
+  /** False while a specialist is unpublished: the team cannot run. */
+  ready: boolean;
+  pendingMembers: AgentTeam['readiness']['pendingMembers'];
 }
 
 export const toAgentTeamRow = (team: AgentTeam): AgentTeamRow => ({
@@ -140,7 +153,21 @@ export const toAgentTeamRow = (team: AgentTeam): AgentTeamRow => ({
   revision: team.currentRevision,
   updatedAt: team.updatedAt,
   members: team.specialists.map((m) => ({ memberId: m.id, agentId: m.agentId })),
+  accessLabel: accessChipLabel(team.accessMode, team.access.length),
+  canEditTeam: accessCapabilities(team.myAccess).canEdit,
+  canDeleteTeam: canDeleteTeam(team.accessMode, team.myAccess),
+  canUseTeam: accessCapabilities(team.myAccess).canUse,
+  canManageAccess: accessCapabilities(team.myAccess).canManageAccess,
+  ready: team.readiness.ready,
+  pendingMembers: team.readiness.pendingMembers,
 });
+
+/** Why Chat is disabled on a team, or '' when it is not. */
+export const chatBlockedReason = (row: Pick<AgentTeamRow, 'canUseTeam' | 'ready'>): string => {
+  if (!row.canUseTeam) return 'You can view this team but not chat with it';
+  if (!row.ready) return 'Every specialist must be evaluated and published first';
+  return '';
+};
 
 /** The purpose under the name — suppressed when it merely repeats the name
  * (a team created without one stores the name as its purpose). */
