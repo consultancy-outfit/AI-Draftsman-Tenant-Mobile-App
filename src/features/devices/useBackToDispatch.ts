@@ -11,6 +11,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 export function useBackToDispatch() {
   const navigation = useNavigation();
   const goBackToDispatch = useCallback(() => {
+    /* Pop what is stacked on top first (e.g. the pairing screen over a thread), then switch drawer route. */
+    if ((navigation.getState()?.routes.length ?? 0) > 1) navigation.goBack();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (navigation.getParent() as any)?.navigate('Dispatch');
   }, [navigation]);

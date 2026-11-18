@@ -43,7 +43,9 @@ export function AppDrawer() {
       drawerContent={(props) => <SidebarContent {...props} />}
     >
       <Drawer.Screen name="MainTabs" component={AppTabs} />
-      <Drawer.Screen name="ChatConversationStack" component={ChatConversationStack} />
+      {/* Back is the screen's own arrow here; the drawer's 40px edge swipe sits on top of that arrow and
+          swallowed its taps on iOS. */}
+      <Drawer.Screen name="ChatConversationStack" component={ChatConversationStack} options={{ swipeEnabled: false }} />
       <Drawer.Screen name="CustomerAgents" component={CustomerAgentsStack} />
       <Drawer.Screen name="KnowledgeBases" component={KnowledgeBasesStack} />
       <Drawer.Screen name="Playground" component={PlaygroundStack} />
