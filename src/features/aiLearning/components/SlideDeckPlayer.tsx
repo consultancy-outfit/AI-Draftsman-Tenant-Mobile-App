@@ -4,9 +4,10 @@ import * as Clipboard from 'expo-clipboard';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Icon } from '@/components/ui';
+import { Icon, useToast } from '@/components/ui';
 
 import type { ViewMilestone, ViewMilestoneTracker } from '../aiLearning.logic';
+import { useLazyGetAiUpdateQuery } from '../aiLearningApi';
 import type { AiShortDeck, AiShortSummary, AiSlide } from '../aiLearning.types';
 import {
   HOLD_MS,
@@ -42,6 +43,9 @@ interface SlideDeckPlayerProps {
   current: boolean;
   tracker: ViewMilestoneTracker;
   onMilestone: (shortId: string, milestone: ViewMilestone, positionS: number) => void;
+  /** The call-to-action slide's "Read the update" and "Related lesson" buttons. */
+  onOpenUpdate: (updateId: string) => void;
+  onOpenLesson: (lessonId: string, title: string) => void;
 }
 
 /** A touch on a control inside a slide must not also count as a tap-zone / swipe on the deck. */
@@ -60,7 +64,9 @@ function Interactive({ children, style }: { children: ReactNode; style?: object 
  * press and hold to pause. Quiz and poll slides hold the deck until answered.
  * Nothing is stored: answers and the score live in this component only.
  */
-export function SlideDeckPlayer({ short, current, tracker, onMilestone }: SlideDeckPlayerProps) {
+export function SlideDeckPlayer({ short, current, tracker, onMilestone, onOpenUpdate, onOpenLesson }: SlideDeckPlayerProps) {
+  const toast = useToast();
+  const [loadUpdate, { isFetching: lessonPending }] = useLazyGetAiUpdateQuery();
   const insets = useSafeAreaInsets();
   const { deck } = short;
   const slides = deck.slides;
@@ -76,6 +82,8 @@ export function SlideDeckPlayer({ short, current, tracker, onMilestone }: SlideD
   const waiting = waitsForAnswer(slide, answered);
   const running = current && !held && !waiting;
 
+  /* `t` is the NATIVE event timestamp: the JS thread can be late delivering a touch-end, so a quick tap must not be
+     mistaken for a long press just because the hold timer fired first. */
   const touch = useRef<{ x: number; y: number; t: number } | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didHold = useRef(false);
@@ -128,8 +136,8 @@ export function SlideDeckPlayer({ short, current, tracker, onMilestone }: SlideD
   }, [current]);
 
   const onTouchStart = (e: GestureResponderEvent) => {
-    const { pageX, pageY } = e.nativeEvent;
-    touch.current = { x: pageX, y: pageY, t: Date.now() };
+    const { pageX, pageY, timestamp } = e.nativeEvent;
+    touch.current = { x: pageX, y: pageY, t: timestamp };
     didHold.current = false;
     holdTimer.current = setTimeout(() => {
       didHold.current = true;
@@ -160,21 +168,37 @@ export function SlideDeckPlayer({ short, current, tracker, onMilestone }: SlideD
     const start = touch.current;
     touch.current = null;
     if (!start) return;
-    if (didHold.current) {
-      setHeld(false);
-      return;
-    }
-    const { pageX, pageY, locationX } = e.nativeEvent;
+    const { pageX, pageY, timestamp } = e.nativeEvent;
+    /* A real press-and-hold lasted HOLD_MS on the native clock. If the timer fired only because JS was late, it was a tap. */
+    const heldFor = timestamp - start.t;
+    const wasHold = didHold.current && heldFor >= HOLD_MS;
+    didHold.current = false;
+    setHeld(false);
+    if (wasHold) return;
     const swipe = swipeDirection(pageX - start.x, pageY - start.y);
     if (swipe) {
       if (swipe === 'next' && waiting) return;
       go(swipe);
       return;
     }
-    const zone = tapZone(locationX, width);
+    /* pageX, not locationX: locationX is relative to whichever child was touched. The deck spans the full width. */
+    const zone = tapZone(pageX, width);
     if (zone === 'next' && waiting) return;
     go(zone);
   };
+
+  /* "Related lesson": the update's first related lesson (the deck itself only says one exists). */
+  const openRelatedLesson = useCallback(async () => {
+    if (!short.updateId) return;
+    try {
+      const update = await loadUpdate(short.updateId, true).unwrap();
+      const lesson = update.relatedLessons[0];
+      if (lesson) onOpenLesson(lesson.id, lesson.title);
+      else toast.show('No related lesson for this update yet', { tone: 'neutral' });
+    } catch {
+      toast.show('Could not open the related lesson', { tone: 'error' });
+    }
+  }, [short.updateId, loadUpdate, onOpenLesson, toast]);
 
   const quiz = useMemo(() => quizScore(slides, answers), [slides, answers]);
   const last = isDeckEnd(index, slides.length);
@@ -214,6 +238,10 @@ export function SlideDeckPlayer({ short, current, tracker, onMilestone }: SlideD
           onAnswer={(id) => setAnswers((a) => ({ ...a, [slide.id]: id }))}
           score={last ? scoreLine(quiz) : null}
           shortTitle={short.title}
+          updateId={short.updateId}
+          onOpenUpdate={onOpenUpdate}
+          onOpenRelatedLesson={() => void openRelatedLesson()}
+          lessonPending={lessonPending}
         />
       </View>
 
@@ -237,9 +265,13 @@ interface SlideBodyProps {
   onAnswer: (optionId: string) => void;
   score: string | null;
   shortTitle: string;
+  updateId: string | null;
+  onOpenUpdate: (updateId: string) => void;
+  onOpenRelatedLesson: () => void;
+  lessonPending: boolean;
 }
 
-function SlideBody({ slide, accent, answer, onAnswer, score, shortTitle }: SlideBodyProps) {
+function SlideBody({ slide, accent, answer, onAnswer, score, shortTitle, updateId, onOpenUpdate, onOpenRelatedLesson, lessonPending }: SlideBodyProps) {
   const body = slide.body ? <Text style={styles.text}>{slide.body}</Text> : null;
 
   switch (slide.kind) {
@@ -316,11 +348,32 @@ function SlideBody({ slide, accent, answer, onAnswer, score, shortTitle }: Slide
         <>
           {body}
           {score ? <Text style={[styles.text, { color: '#fff', fontWeight: '700' }]}>{score}</Text> : null}
+          {updateId ? (
+            <Interactive>
+              <TouchableOpacity onPress={() => onOpenUpdate(updateId)} accessibilityRole="button" style={[styles.cta, { backgroundColor: accent }]}>
+                <Icon name="article" size={18} color="#fff" />
+                <Text style={styles.ctaText}>Read the update</Text>
+              </TouchableOpacity>
+            </Interactive>
+          ) : null}
+          {updateId && slide.actions?.some((a) => a.type === 'related_lesson') ? (
+            <Interactive>
+              <TouchableOpacity
+                disabled={lessonPending}
+                onPress={onOpenRelatedLesson}
+                accessibilityRole="button"
+                style={[styles.cta, styles.ctaSecondary, lessonPending && { opacity: 0.6 }]}
+              >
+                <Icon name="school" size={18} color="#fff" />
+                <Text style={styles.ctaText}>Related lesson</Text>
+              </TouchableOpacity>
+            </Interactive>
+          ) : null}
           <Interactive>
             <TouchableOpacity
               onPress={() => void Share.share({ message: `${shortTitle} — an AI update short from AIDraftsMan` })}
               accessibilityRole="button"
-              style={[styles.cta, { backgroundColor: accent }]}
+              style={[styles.cta, styles.ctaSecondary]}
             >
               <Icon name="share" size={18} color="#fff" />
               <Text style={styles.ctaText}>Share</Text>
@@ -445,6 +498,7 @@ const styles = StyleSheet.create({
   optionText: { color: '#fff', fontSize: 16 },
   cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: 999 },
   ctaText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  ctaSecondary: { backgroundColor: 'rgba(255,255,255,0.14)' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   half: { width: '47%' },
   fact: { padding: 14, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.1)', gap: 4, minHeight: 78 },

@@ -19,6 +19,8 @@ interface ShortItemProps {
   current: boolean;
   tracker: ViewMilestoneTracker;
   onMilestone: (shortId: string, milestone: ViewMilestone, positionS: number) => void;
+  onOpenUpdate: (updateId: string) => void;
+  onOpenLesson: (lessonId: string, title: string) => void;
 }
 
 /**
@@ -26,7 +28,7 @@ interface ShortItemProps {
  * decides); a short that is not mounted shows its poster so scrolling past it
  * costs no decoder.
  */
-export function ShortItem({ short, height, mounted, current, tracker, onMilestone }: ShortItemProps) {
+export function ShortItem({ short, height, mounted, current, tracker, onMilestone, onOpenUpdate, onOpenLesson }: ShortItemProps) {
   const { theme } = useAppTheme();
   const slides = isSlideShort(short);
 
@@ -34,7 +36,7 @@ export function ShortItem({ short, height, mounted, current, tracker, onMileston
     <View style={[styles.root, { height, backgroundColor: '#000' }]}>
       {mounted ? (
         slides ? (
-          <SlideDeckPlayer short={short as Parameters<typeof SlideDeckPlayer>[0]['short']} current={current} tracker={tracker} onMilestone={onMilestone} />
+          <SlideDeckPlayer short={short as Parameters<typeof SlideDeckPlayer>[0]['short']} current={current} tracker={tracker} onMilestone={onMilestone} onOpenUpdate={onOpenUpdate} onOpenLesson={onOpenLesson} />
         ) : (
           <VideoShort short={short} current={current} tracker={tracker} onMilestone={onMilestone} />
         )

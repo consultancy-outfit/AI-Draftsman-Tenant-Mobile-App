@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, StyleSheet, View, type ViewToken } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { skipToken } from '@reduxjs/toolkit/query';
 import { setAudioModeAsync } from 'expo-audio';
 
 import { Button, EmptyState, ErrorState, Loader } from '@/components/ui';
+import type { AiLearningStackParamList } from '@/navigation/types';
 import { useAppTheme } from '@/theme/ThemeContext';
 
 import { AI_LEARNING_COPY, AI_SHORTS_PAGE_SIZE } from '../aiLearning.data';
@@ -27,6 +29,9 @@ import { ShortItem } from '../components/ShortItem';
 export function AiShortsSection({ initialShortId }: { initialShortId?: string | undefined }) {
   const { theme } = useAppTheme();
   const focused = useIsFocused();
+  const navigation = useNavigation<NativeStackNavigationProp<AiLearningStackParamList>>();
+  const openUpdate = useCallback((updateId: string) => navigation.navigate('AiUpdateDetail', { updateId }), [navigation]);
+  const openLesson = useCallback((lessonId: string, title: string) => navigation.navigate('AiLesson', { lessonId, title }), [navigation]);
   /* iOS mutes narration when the ring/silent switch is on unless the session says otherwise. */
   useEffect(() => {
     void setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: false }).catch(() => undefined);
@@ -95,6 +100,8 @@ export function AiShortsSection({ initialShortId }: { initialShortId?: string | 
             current={focused && index === current}
             tracker={tracker}
             onMilestone={onMilestone}
+            onOpenUpdate={openUpdate}
+            onOpenLesson={openLesson}
           />
         )}
         ListFooterComponent={
