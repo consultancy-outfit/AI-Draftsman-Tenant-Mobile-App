@@ -48,6 +48,16 @@ function SidebarRow({ item, active, onPress }: { item: SidebarItem; active: bool
   );
 }
 
+/**
+ * Sidebar items whose stack can be left on a detail screen (for example the team opened from the
+ * Marketplace). Tapping the item must land on the module's list, not on that stale detail.
+ */
+const MODULE_HOME_SCREEN: Partial<Record<string, string>> = {
+  AgentTeams: 'AgentTeamsHome',
+  Apprenticeships: 'ApprenticeshipsHome',
+  MyLearning: 'MyLearningHome',
+};
+
 export function SidebarContent(props: DrawerContentComponentProps) {
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -62,6 +72,8 @@ export function SidebarContent(props: DrawerContentComponentProps) {
        screen name. */
     if (route === 'MainTabs') {
       props.navigation.navigate('MainTabs', { screen: 'DashboardTab' } as never);
+    } else if (MODULE_HOME_SCREEN[route]) {
+      (props.navigation.navigate as (name: string, params?: object) => void)(route, { screen: MODULE_HOME_SCREEN[route] });
     } else {
       props.navigation.navigate(route as never);
     }
