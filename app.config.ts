@@ -25,7 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: appName,
   slug: 'ai-draftsman-tenant-mobile',
   owner: 'salmanidreesconsultancy',
-  version: '1.2.2',
+  version: '1.2.3',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic', // driven by our own ThemeProvider, not the OS switch alone
@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
      */
     supportsTablet: false,
     bundleIdentifier: `ai.aidraftsman.tenant${bundleSuffix}`,
-    buildNumber: '12',
+    buildNumber: '13',
     infoPlist: {
       NSFaceIDUsageDescription:
         'Use Face ID to unlock AI Draftsman B2B quickly and securely.',
@@ -145,6 +145,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     ['./plugins/withPodsDeploymentTarget', { minimum: '15.1' }],
+    /* Xcode 27 / iOS 27 SDK requires the UIScene life cycle — see the plugin. */
+    './plugins/withSceneLifecycle',
     'expo-secure-store',
     'expo-font',
     'expo-web-browser',
